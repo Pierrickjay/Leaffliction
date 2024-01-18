@@ -1,2 +1,2 @@
 # Leaffliction
-Data extraction using computer vision technology, training the neural network model, passing the image to the program and classifying it.
+Data extraction using computer vision technology to train a neural network model. Finally an image can be pass to the program and be classified.
