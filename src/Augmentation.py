@@ -1,0 +1,143 @@
+import os
+import matplotlib.pyplot as plt
+from PIL import Image, ImageOps, ImageFilter, ImageEnhance
+from sys import argv
+
+
+def save_in(file_path, img, _type):
+    filepath_split = os.path.splitext(file_path)
+    file_name_before = os.path.splitext(os.path.basename(file_path))
+    Nfile_name = file_name_before[0] + _type + file_name_before[1]
+    new_path = filepath_split[0] + _type + filepath_split[1]
+    print(Nfile_name)
+    img.save("augmented_directory/"
+             + os.path.basename(os.path.dirname(file_path)) + "/" + Nfile_name)
+    img.save(new_path)
+
+
+def rotating_img(img, file_path):
+    rotated_img = img.rotate(30)
+    save_in(file_path, rotated_img, "_rotated")
+    return rotated_img
+
+
+def fliping_img(img, file_path):
+    flipped_img = ImageOps.flip(img)
+    save_in(file_path, flipped_img, "_fliped")
+    return flipped_img
+
+
+def bluring_img(img, file_path):
+    blur_img = img.filter(ImageFilter.BLUR)
+    save_in(file_path, blur_img, "_blured")
+    return blur_img
+
+
+def scaling_img(img, file_path):
+    w, h = img.size
+    zoom2 = 5
+    img_crop = img.crop(((w // 2) - w / zoom2, (h // 2) - h / zoom2,
+                         (w // 2) + w / zoom2, (h // 2) + h / zoom2))
+    img_zoomed = img_crop.resize((w, h), Image.LANCZOS)
+    save_in(file_path, img_zoomed, "_scaled")
+    return img_zoomed
+
+
+def increase_contrast(img, file_path):
+    contr_img = ImageEnhance.Contrast(img).enhance(1.5)
+    save_in(file_path, contr_img, "_contrasted")
+    return contr_img
+
+
+def illuminating_img(img, file_path):
+
+    bright_img = ImageEnhance.Brightness(img).enhance(1.5)
+    save_in(file_path, bright_img, "_illuminated")
+    return bright_img
+
+
+def close_all(img, rot_img, flip_img,
+              blur_img, illum_img, contr_img, zoom_img):
+    img.close()
+    rot_img.close()
+    flip_img.close()
+    blur_img.close()
+    illum_img.close()
+    contr_img.close()
+    zoom_img.close()
+
+
+def plot_img(img, rot_img, flip_img, blur_img, illum_img, contr_img, zoom_img):
+    fig = plt.figure(figsize=(15, 2))
+    fig.add_subplot(1, 7, 1)
+    plt.imshow(img)
+    plt.axis('off')
+    plt.title("original_img")
+
+    fig.add_subplot(1, 7, 3)
+    plt.imshow(rot_img)
+    plt.axis('off')
+    plt.title("rot_img")
+
+    fig.add_subplot(1, 7, 4)
+    plt.imshow(flip_img)
+    plt.axis('off')
+    plt.title("flip_img")
+
+    fig.add_subplot(1, 7, 2)
+    plt.imshow(blur_img)
+    plt.axis('off')
+    plt.title("blur_img")
+
+    fig.add_subplot(1, 7, 5)
+    plt.imshow(illum_img)
+    plt.axis('off')
+    plt.title("illum_img")
+
+    fig.add_subplot(1, 7, 6)
+    plt.imshow(contr_img)
+    plt.axis('off')
+    plt.title("contr_img")
+
+    fig.add_subplot(1, 7, 7)
+    plt.imshow(zoom_img)
+    plt.axis('off')
+    plt.title("zoom_img")
+
+    plt.tight_layout()
+    plt.show()
+    close_all(img, rot_img, flip_img, blur_img, illum_img, contr_img, zoom_img)
+
+
+def main():
+    try:
+        if not os.path.isfile(argv[1]):
+            print("Please enter a directory as a parametter")
+            return 1
+        if not os.path.isdir("augmented_directory"):
+            os.mkdir(os.path.join("augmented_directory"))
+            print("creating augmented directory")
+
+        if not os.path.isdir("augmented_directory/" +
+                             os.path.basename(os.path.dirname(argv[1]))):
+            os.mkdir(os.path.join("augmented_directory/" +
+                                  os.path.basename(os.path.dirname(argv[1]))))
+            print("created sub-dir of the img inside the augmented directory")
+
+        img = Image.open(argv[1])
+        rot_img = rotating_img(img, argv[1])
+        flip_img = fliping_img(img, argv[1])
+        blur_img = bluring_img(img, argv[1])
+        illum_img = illuminating_img(img, argv[1])
+        scal_img = scaling_img(img, argv[1])
+        contr_img = increase_contrast(img, argv[1])
+        plot_img(img, rot_img, flip_img,
+                 blur_img, illum_img, contr_img, scal_img)
+
+    except Exception as err:
+        print("Error: ", err)
+        return 1
+
+
+if (__name__ == "__main__"):
+    main()
