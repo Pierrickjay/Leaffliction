@@ -1,25 +1,47 @@
 import os
 from sys import argv
 import random
-from Augmentation import augment_images, create_dir_if_needed
+from PIL import Image
+from Augmentation import create_dir_if_needed, augment_images, rotating_img, fliping_img, bluring_img, illuminating_img, scaling_img, increase_contrast
 from Distribution import retrieve_file_subdir
 
+def inc_to_numb(to_add, img):
+    img_created = Image.open(img)
+    augmented_func = [
+        rotating_img,
+        fliping_img,
+        bluring_img,
+        illuminating_img,
+        scaling_img,
+        increase_contrast
+    ]
+    for i, augment_func in enumerate(augmented_func):
+        if i < to_add:
+            img_saved = augment_func(img_created, img)
+            img_saved.close()
 
 def inc(max, nameDir, actualsize):
     to_add = 0
+    filenames = os.listdir(f"leaves/images/{nameDir}")
     while actualsize + to_add < max :
-        print(nameDir)
-        img = f"leaves/images/{nameDir}/image (" + str(random.randrange(1, actualsize, 1)) + ").JPG"
-        print(img)
+        img = f"leaves/images/{nameDir}/{filenames[random.randint(0, len(filenames) - 1)]}"
         create_dir_if_needed(nameDir)
-        if actualsize + to_add + 6 < max:
+        if actualsize + to_add + 6 <= max:
             augment_images(img, False)
+            to_add += 6
+        else:
+            inc_to_numb(max - (actualsize + to_add), img)
+            break
+
+
+
 
 def increment_to_balance(file_count):
     max = file_count.max()
     print(file_count)
     a = 0
     for index in file_count.index:
+        print(index)
         inc(max, index, file_count.iloc[a])
         a += 1
 
@@ -31,8 +53,6 @@ def main():
             return 1
         df = retrieve_file_subdir(argv[1])
         filecount = df.count()
-        print(filecount.max())
-        print(filecount.loc["Grape_Esca"])
         increment_to_balance(filecount)
     except Exception as err:
         print("Error: ", err)

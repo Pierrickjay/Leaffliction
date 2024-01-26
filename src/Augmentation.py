@@ -9,7 +9,6 @@ def save_in(file_path, img, _type):
     file_name_before = os.path.splitext(os.path.basename(file_path))
     Nfile_name = file_name_before[0] + _type + file_name_before[1]
     new_path = filepath_split[0] + _type + filepath_split[1]
-    print(Nfile_name)
     img.save("augmented_directory/"
              + os.path.basename(os.path.dirname(file_path)) + "/" + Nfile_name)
     img.save(new_path)
@@ -128,10 +127,7 @@ def create_dir_if_needed(subDir):
     if not os.path.isdir("augmented_directory"):
         os.mkdir(os.path.join("augmented_directory"))
         print("creating augmented directory")
-    print(subDir)
-    print("augmented_directory/" + subDir)
     if not os.path.isdir("augmented_directory/" + subDir):
-        print("heyyy")
         os.mkdir(os.path.join("augmented_directory/" + subDir))
         print("created sub-dir of the img inside the augmented directory")
 
@@ -142,7 +138,6 @@ def main():
             print("Please enter a directory as a parametter")
             return 1
         create_dir_if_needed(os.path.basename(os.path.dirname(argv[1])))
-        print(argv[1])
         augment_images(argv[1], True)
     except Exception as err:
         print("Error: ", err)
