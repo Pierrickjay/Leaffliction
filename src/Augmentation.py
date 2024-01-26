@@ -67,7 +67,7 @@ def close_all(img, rot_img, flip_img,
     zoom_img.close()
 
 
-def plot_img(img, rot_img, flip_img, blur_img, illum_img, contr_img, zoom_img):
+def plot_img(img, rot_img, flip_img, blur_img, illum_img, contr_img, scal_img):
     fig = plt.figure(figsize=(15, 2))
     fig.add_subplot(1, 7, 1)
     plt.imshow(img)
@@ -100,13 +100,40 @@ def plot_img(img, rot_img, flip_img, blur_img, illum_img, contr_img, zoom_img):
     plt.title("contr_img")
 
     fig.add_subplot(1, 7, 7)
-    plt.imshow(zoom_img)
+    plt.imshow(scal_img)
     plt.axis('off')
-    plt.title("zoom_img")
+    plt.title("scal_img")
 
     plt.tight_layout()
     plt.show()
-    close_all(img, rot_img, flip_img, blur_img, illum_img, contr_img, zoom_img)
+    close_all(img, rot_img, flip_img, blur_img, illum_img, contr_img, scal_img)
+
+
+def augment_images(filename, show):
+    img = Image.open(filename)
+    rot_img = rotating_img(img, filename)
+    flip_img = fliping_img(img, filename)
+    blur_img = bluring_img(img, filename)
+    illum_img = illuminating_img(img, filename)
+    scal_img = scaling_img(img, filename)
+    contr_img = increase_contrast(img, filename)
+    if show:
+        plot_img(img, rot_img, flip_img,
+                    blur_img, illum_img, contr_img, scal_img)
+    close_all(img, rot_img, flip_img, blur_img, illum_img, contr_img, scal_img)
+
+
+
+def create_dir_if_needed(subDir):
+    if not os.path.isdir("augmented_directory"):
+        os.mkdir(os.path.join("augmented_directory"))
+        print("creating augmented directory")
+    print(subDir)
+    print("augmented_directory/" + subDir)
+    if not os.path.isdir("augmented_directory/" + subDir):
+        print("heyyy")
+        os.mkdir(os.path.join("augmented_directory/" + subDir))
+        print("created sub-dir of the img inside the augmented directory")
 
 
 def main():
@@ -114,26 +141,9 @@ def main():
         if not os.path.isfile(argv[1]):
             print("Please enter a directory as a parametter")
             return 1
-        if not os.path.isdir("augmented_directory"):
-            os.mkdir(os.path.join("augmented_directory"))
-            print("creating augmented directory")
-
-        if not os.path.isdir("augmented_directory/" +
-                             os.path.basename(os.path.dirname(argv[1]))):
-            os.mkdir(os.path.join("augmented_directory/" +
-                                  os.path.basename(os.path.dirname(argv[1]))))
-            print("created sub-dir of the img inside the augmented directory")
-
-        img = Image.open(argv[1])
-        rot_img = rotating_img(img, argv[1])
-        flip_img = fliping_img(img, argv[1])
-        blur_img = bluring_img(img, argv[1])
-        illum_img = illuminating_img(img, argv[1])
-        scal_img = scaling_img(img, argv[1])
-        contr_img = increase_contrast(img, argv[1])
-        plot_img(img, rot_img, flip_img,
-                 blur_img, illum_img, contr_img, scal_img)
-
+        create_dir_if_needed(os.path.basename(os.path.dirname(argv[1])))
+        print(argv[1])
+        augment_images(argv[1], True)
     except Exception as err:
         print("Error: ", err)
         return 1

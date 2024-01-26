@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 
 
 def retrieve_file_subdir(dir):
-
     data = {}
     for foldername, subdirectory, filenames in os.walk(dir):
         base_foldername = os.path.basename(foldername)
