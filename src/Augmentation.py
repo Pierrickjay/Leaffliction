@@ -15,7 +15,7 @@ def save_in(file_path, img, _type):
 
 
 def rotating_img(img, file_path):
-    rotated_img = img.rotate(30)
+    rotated_img = img.rotate(30, fillcolor="#FFFFFF")
     save_in(file_path, rotated_img, "_rotated")
     return rotated_img
 
@@ -66,44 +66,40 @@ def close_all(img, rot_img, flip_img,
     zoom_img.close()
 
 
-def plot_img(img, rot_img, flip_img, blur_img, illum_img, contr_img, scal_img):
+def plot_img(img, filename, rot_img, flip_img,
+             blur_img, illum_img, contr_img, scal_img):
     fig = plt.figure(figsize=(15, 2))
     fig.add_subplot(1, 7, 1)
     plt.imshow(img)
     plt.axis('off')
-    plt.title("original_img")
-
+    plt.title("Original")
     fig.add_subplot(1, 7, 3)
     plt.imshow(rot_img)
     plt.axis('off')
-    plt.title("rot_img")
-
+    plt.title("Rotation")
     fig.add_subplot(1, 7, 4)
     plt.imshow(flip_img)
     plt.axis('off')
-    plt.title("flip_img")
-
+    plt.title("Flip")
     fig.add_subplot(1, 7, 2)
     plt.imshow(blur_img)
     plt.axis('off')
-    plt.title("blur_img")
-
+    plt.title("Blur")
     fig.add_subplot(1, 7, 5)
     plt.imshow(illum_img)
     plt.axis('off')
-    plt.title("illum_img")
-
+    plt.title("Illumination")
     fig.add_subplot(1, 7, 6)
     plt.imshow(contr_img)
     plt.axis('off')
-    plt.title("contr_img")
-
+    plt.title("Contrast")
     fig.add_subplot(1, 7, 7)
     plt.imshow(scal_img)
     plt.axis('off')
-    plt.title("scal_img")
-
+    plt.title("Scaling")
     plt.tight_layout()
+    manager = plt.get_current_fig_manager()
+    manager.set_window_title("Augmentation for " + filename)
     plt.show()
     close_all(img, rot_img, flip_img, blur_img, illum_img, contr_img, scal_img)
 
@@ -117,26 +113,24 @@ def augment_images(filename, show):
     scal_img = scaling_img(img, filename)
     contr_img = increase_contrast(img, filename)
     if show:
-        plot_img(img, rot_img, flip_img,
-                    blur_img, illum_img, contr_img, scal_img)
+        plot_img(img, filename, rot_img, flip_img,
+                 blur_img, illum_img, contr_img, scal_img)
     close_all(img, rot_img, flip_img, blur_img, illum_img, contr_img, scal_img)
-
 
 
 def create_dir_if_needed(subDir):
     if not os.path.isdir("augmented_directory"):
         os.mkdir(os.path.join("augmented_directory"))
-        print("creating augmented directory")
+        print("Creating augmented directory")
     if not os.path.isdir("augmented_directory/" + subDir):
         os.mkdir(os.path.join("augmented_directory/" + subDir))
-        print("created sub-dir of the img inside the augmented directory")
+        print("Created sub-dir of the img inside the augmented directory")
 
 
 def main():
     try:
-        if not os.path.isfile(argv[1]):
-            print("Please enter a directory as a parametter")
-            return 1
+        assert len(argv) == 2, "Please enter a file path as parametter"
+        assert os.path.isfile(argv[1]), "Please enter a file as parametter"
         create_dir_if_needed(os.path.basename(os.path.dirname(argv[1])))
         augment_images(argv[1], True)
     except Exception as err:
