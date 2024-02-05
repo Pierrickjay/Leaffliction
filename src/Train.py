@@ -78,7 +78,6 @@ def main(**kwargs):
 
         # Modify the dataset before the learning
         # to do Besoin de prendre tous les fichiers du dossier et de les modifier
-
         # Datasets
         dataset = loadDataset(path, img_size, batch_size)
         train_ds, validation_ds = get_dataset_partition_tf(dataset)
