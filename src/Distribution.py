@@ -6,11 +6,16 @@ import matplotlib.pyplot as plt
 
 def retrieve_file_subdir(dir):
     data = {}
-    for foldername, subdirectory, filenames in os.walk(dir):
+    for foldername, subdirectorys, filenames in os.walk(dir):
         base_foldername = os.path.basename(foldername)
         file_names = []
-        for filename in filenames:
-            file_names.append(filename)
+        if subdirectorys:
+            for subdirectory in subdirectorys:
+                for filename in filenames:
+                    file_names.append(filename)
+        else :
+            for filename in filenames:
+                    file_names.append(filename)
         data[base_foldername] = pd.Series(file_names)
     df = pd.concat(data, axis=1)  # To deal with dict
     df.dropna(axis=1, how="all", inplace=True)
