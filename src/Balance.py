@@ -51,8 +51,14 @@ def increment_to_balance(path, file_count):
     print(path)
     for index in file_count.index:
         print(path + index)
-        inc(max, path + index, file_count.iloc[a])
+        inc(max, path + "/" + index, file_count.iloc[a])
         a += 1
+
+
+def balance(path):
+    df = retrieve_file_subdir(path)
+    filecount = df.count()
+    increment_to_balance(path, filecount)
 
 
 def main():
@@ -61,9 +67,9 @@ def main():
         if not os.path.isdir(argv[1]):
             print("Please enter a directory as a parametter")
             return 1
-        df = retrieve_file_subdir(argv[1])
-        filecount = df.count()
-        increment_to_balance(argv[1], filecount)
+        print(argv[1])
+        balance(argv[1])
+
     except Exception as err:
         print("Error: ", err)
         return 1
