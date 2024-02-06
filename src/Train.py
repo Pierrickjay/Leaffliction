@@ -1,23 +1,39 @@
 import numpy as np
 from PIL import Image, ImageEnhance
 from plantcv import plantcv as pcv
-from plantcv.parallel import WorkflowInputs
 import cv2
 import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Flatten
 import os
 import argparse
 
 
 def loadDataset(path, img_size, batch_size):
     return tf.keras.preprocessing.image_dataset_from_directory(
-	    path, 
-	    shuffle = True, 
-	    image_size = (img_size, img_size), 
-	    batch_size = batch_size
+        path,
+        shuffle=True,
+        image_size=(img_size, img_size),
+        batch_size=batch_size
     )
 
 
-def remove_back(img, size_fill, enhance_val, buffer_size):
+def processImgDataSet(path):
+    img_path_list = [[[foldername, fn, '/'.join(
+         [el for el in foldername.split("/") if el != ".." and el != "."])]
+         for fn in filenames] for foldername, subdirectory, filenames
+         in os.walk(path) if len(filenames)]
+    img_path_list = np.array([element for sous_liste in
+                              img_path_list for element in sous_liste])
+    img_array = np.array([np.array(Image.open(str(img_path[0] + "/" + img_path[1]), "r")) for img_path in img_path_list])
+    img_back_removed = [removeBack(img, 5000, 1, 10) for img in img_array]
+    img_back_removed_IMG = [Image.fromarray(img_array) for img_array in img_back_removed]
+    makedir = [os.makedirs("increased/" + path[2], exist_ok=True) for path in img_path_list]
+    save = [img.save("increased/" + path[2] + "/" + path[1]) for path, img in zip(img_path_list, img_back_removed_IMG)]
+    return
+
+
+def removeBack(img, size_fill, enhance_val, buffer_size):
 	img_img = Image.fromarray(img, mode="RGB")
 	contr_img = ImageEnhance.Contrast(img_img).enhance(enhance_val)
 	gray_img = pcv.rgb2gray_lab(rgb_img=np.array(contr_img), channel='a')
@@ -77,9 +93,9 @@ def main(**kwargs):
         input_shape = (batch_size, img_size, img_size, 3)
 
         # Modify the dataset before the learning
-        # to do Besoin de prendre tous les fichiers du dossier et de les modifier
+        processImgDataSet(path)
         # Datasets
-        dataset = loadDataset(path, img_size, batch_size)
+        dataset = loadDataset("tmp", img_size, batch_size)
         train_ds, validation_ds = get_dataset_partition_tf(dataset)
         train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size = tf.data.AUTOTUNE)
         validation_ds = validation_ds.cache().shuffle(1000).prefetch(buffer_size = tf.data.AUTOTUNE)
@@ -110,6 +126,8 @@ def main(**kwargs):
             validation_data = validation_ds
         )
         model.save(save_dir + save_name + '.keras')
+
+        # Besoin de creer le zip avec les learning et les images
 
     except Exception as err:
         print("Error: ", err)
