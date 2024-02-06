@@ -35,7 +35,8 @@ def processImgDataSet(path):
                             for img_array in img_back_removed]
     [os.makedirs("increased/" + path[2], exist_ok=True)
      for path in img_path_list]
-    [img.save("increased/" + path[2] + "/" + path[1])
+    [img.save(os.path.join(
+        "increased", path[2], path[1].split(".")[0] + ".png"), format="PNG")
      for path, img in zip(img_path_list, img_back_removed_IMG)]
     return
 
@@ -82,39 +83,37 @@ def get_dataset_partition_tf(ds, train_split=0.85,
 
 
 def main(**kwargs):
-    batch_size = 32
-    epochs = 15
-    path = None
-    save_dir = ""
-    save_name = "learnings"
-    img_size = 256
-    for key, value in kwargs.items():
-        match key:
-            case 'batch_size':
-                batch_size = value
-            case 'epochs':
-                epochs = value
-            case 'path':
-                path = value
-            case 'save_dir':
-                save_dir = value
-            case 'save_name':
-                save_name = value
     try:
+        batch_size = 32
+        epochs = 15
+        path = None
+        save_dir = ""
+        save_name = "learnings"
+        img_size = 256
+        for key, value in kwargs.items():
+            if value is not None:
+                match key:
+                    case 'batch_size':
+                        batch_size = value
+                    case 'epochs':
+                        epochs = value
+                    case 'path':
+                        path = value
+                    case 'save_dir':
+                        save_dir = value
+                    case 'save_name':
+                        save_name = value
         assert path is not None, "Please enter a directory path as parametter"
         assert os.path.isdir(path), "Please enter a directory as a parametter"
         input_shape = (img_size, img_size, 3)
 
         # Modify the dataset before the learning
-        print("\n")
         print("Removing img background\n")
-        # processImgDataSet(path)
+        processImgDataSet(path)
         print("........................done !\n")
-        
 
         # Datasets
         print("Loading dataset\n")
-        # Besoin de gerer le fait
         dataset = loadDataset("increased/leaves/images", img_size)
         train_ds, validation_ds = get_dataset_partition_tf(dataset)
         train_ds = train_ds.cache().shuffle(1000).prefetch(
@@ -148,7 +147,7 @@ def main(**kwargs):
         model.fit(
             train_ds,
             epochs=epochs,
-            # batch_size=32,
+            batch_size=batch_size,
             verbose=1,
             validation_data=validation_ds
         )
