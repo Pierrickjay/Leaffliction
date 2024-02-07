@@ -27,8 +27,8 @@ def inc_to_numb(to_add, img):
 def inc(max, nameDir, actualsize):
     to_add = 0
     print("max to reach = ",max)
-    print("nb of image now = ", actualsize)
     fn = os.listdir(nameDir)
+    print("nb of image now = ", actualsize)
     a = 0
     create_dir_if_needed(nameDir)
     while actualsize + to_add <= max and a < len(fn):
@@ -46,12 +46,9 @@ def inc(max, nameDir, actualsize):
 
 def increment_to_balance(path, file_count):
     max = file_count.max()
-    print(file_count)
     a = 0
-    print(path)
     for index in file_count.index:
-        print(path + index)
-        inc(max, path + "/" + index, file_count.iloc[a])
+        inc(max, index, file_count.iloc[a])
         a += 1
 
 
