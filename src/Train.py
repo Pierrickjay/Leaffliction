@@ -101,8 +101,7 @@ def processArgs(**kwargs):
     batch_size = 32
     epochs = 15
     path = None
-    save_dir = ""
-    save_name = "learnings"
+    save_name = "Learning"
     img_size = 256
     for key, value in kwargs.items():
         if value is not None:
@@ -113,24 +112,22 @@ def processArgs(**kwargs):
                     epochs = value
                 case 'path':
                     path = value
-                case 'save_dir':
-                    save_dir = value
                 case 'save_name':
                     save_name = value
-    return batch_size, epochs, path, save_dir, save_name, img_size
+    return batch_size, epochs, path, save_name, img_size
 
 
 def main(**kwargs):
     try:
-        batch, epochs, path, saveD, saveN, imgSize = processArgs(**kwargs)
+        batch, epochs, path, saveN, imgSize = processArgs(**kwargs)
         assert path is not None, "Please enter a directory path as parametter"
         assert os.path.isdir(path), "Please enter a directory as a parametter"
         input_shape = (imgSize, imgSize, 3)
 
         # Balance the dataset
-        print("Balancing the dataset\n")
-        balance(path)
-        print("......................done !\n")
+        # print("Balancing the dataset\n")
+        # balance(path)
+        # print("......................done !\n")
 
         # Modify the dataset before the learning
         print("Removing img background\n")
@@ -180,18 +177,18 @@ def main(**kwargs):
 
         # Saving the model
         print("Saving the model\n")
-        model.save(saveD + saveN + '.keras')
+        model.save('model_param.keras')
         print(".................done !\n")
 
         # Besoin de creer le zip avec les learning et les images
         print("Creating Learning.zip\n")
-        createFinalZip(saveD + saveN + '.keras', "increased", 'Learning.zip')
+        createFinalZip('model_param.keras', "increased", saveN + '.zip')
         print("......................done !\n")
 
         # Besoin de creer le zip avec les learning et les images
         print("Removing tmp files\n")
         shutil.rmtree("increased")
-        os.remove(saveD + saveN + '.keras')
+        os.remove('model_param.keras')
         print("...................done !\n")
 
     except Exception as err:
@@ -208,8 +205,6 @@ if __name__ == "__main__":
                         help="Number of epochs for the training")
     parser.add_argument("--path", "-p", type=str,
                         help="Path to the dataset directory")
-    parser.add_argument("--save_dir", "-sd", type=str,
-                        help="Path to the learning saving directory")
     parser.add_argument("--save_name", "-sn", type=str,
                         help="Name of the learning saving file")
 
