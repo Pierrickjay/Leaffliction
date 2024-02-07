@@ -129,9 +129,9 @@ def main(**kwargs):
         input_shape = (imgSize, imgSize, 3)
 
         # Balance the dataset
-        # print("Balancing the dataset.....................")
-        # balance(path)
-        # print("..........................................done !\n")
+        print("Balancing the dataset.....................")
+        balance(path)
+        print("..........................................done !\n")
 
         # Modify the dataset before the learning
         print("\nRemoving img background...................")
