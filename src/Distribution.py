@@ -7,22 +7,27 @@ import matplotlib.pyplot as plt
 def retrieve_file_subdir(dir):
     data = {}
     for foldername, subdirectorys, filenames in os.walk(dir):
-        base_foldername = os.path.basename(foldername)
+        base_foldername = foldername
         file_names = []
         if subdirectorys:
             for subdirectory in subdirectorys:
                 for filename in filenames:
-                    file_names.append(filename)
+                    file_names.append(foldername + "/" + subdirectory + "/" + filename)
         else :
+            print("fukc")
+            print(foldername)
             for filename in filenames:
-                    file_names.append(filename)
+                    file_names.append(foldername + "/" + filename)
         data[base_foldername] = pd.Series(file_names)
+        print("base = ", base_foldername)
     df = pd.concat(data, axis=1)  # To deal with dict
     df.dropna(axis=1, how="all", inplace=True)
+    print(df)
     return df
 
 
 def plot_value(df):
+    print(df)
     file_count = df.count()  # en trouve 1 de moins
     print(file_count)
     # Plot histograms
