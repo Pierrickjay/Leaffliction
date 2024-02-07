@@ -88,13 +88,17 @@ def getDatasetPartitionTf(ds, train_split=0.85,
     return train_dataset, cv_dataset
 
 
-def createFinalZip(learningFilePath, imgDir, zipFileName):
+def createFinalZip(zipFileName):
+    learningFilePath = "model_param.keras"
+    classNamesCsv = "class_names.csv"
+    imgDir = "increased"
     with zipfile.ZipFile(zipFileName, 'w') as zipf:
         for rootDir, subDir, files in os.walk(imgDir):
             for file in files:
                 fullPath = os.path.join(rootDir, file)
                 zipf.write(fullPath, os.path.relpath(fullPath, imgDir))
         zipf.write(learningFilePath)
+        zipf.write(classNamesCsv)
 
 
 def processArgs(**kwargs):
@@ -130,7 +134,7 @@ def main(**kwargs):
         # print("..........................................done !\n")
 
         # Modify the dataset before the learning
-        print("Removing img background...................")
+        print("\nRemoving img background...................")
         processImgDataSet(path)
         print("..........................................done !\n")
 
@@ -178,17 +182,19 @@ def main(**kwargs):
         # Saving the model
         print("Saving the model..........................")
         model.save('model_param.keras')
+        np.savetxt("class_name.csv", class_names, delimiter=',', fmt='%s')
         print("..........................................done !\n")
 
         # Besoin de creer le zip avec les learning et les images
         print("Creating Learning.zip.....................")
-        createFinalZip('model_param.keras', "increased", saveN + '.zip')
+        createFinalZip(saveN + '.zip')
         print("..........................................done !\n")
 
         # Besoin de creer le zip avec les learning et les images
         print("Removing tmp files........................")
         shutil.rmtree("increased")
         os.remove('model_param.keras')
+        os.remove('class_names.csv')
         print("..........................................done !\n")
 
     except Exception as err:
