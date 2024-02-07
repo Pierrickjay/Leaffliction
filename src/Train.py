@@ -78,13 +78,31 @@ def removeBack(img, size_fill, enhance_val, buffer_size):
     return img_modified
 
 
-def getDatasetPartitionTf(ds, train_split=0.85,
-                          shuffle=True, shuffle_size=10000):
-    if shuffle:
-        ds = ds.shuffle(shuffle_size, seed=12)
-    len_train_dataset = int(len(ds) * train_split)
+def getDatasetPartitionTf(ds, train_size, val_size):
+    train_split=0.85
+    shuffle_size=100
+    ds = ds.shuffle(shuffle_size, seed=12)
+    if train_size is not None:
+        len_train_dataset = int(train_size / 32.0)
+    else :
+        len_train_dataset = int(len(ds) * train_split)
+    if val_size is not None:
+        len_val_ds = int(val_size / 32.0)
+    else:
+        len_val_ds = int((15.0/85.0) * len_train_dataset)
+
+    print("len_train_dataset",len_train_dataset)
+    print("len_val_ds",len_val_ds)
+    print(ds.cardinality().numpy())
     train_dataset = ds.take(len_train_dataset)
-    cv_dataset = ds.skip(len_train_dataset)
+    print(train_dataset.cardinality().numpy())
+
+    cv_dataset = ds.skip(len_train_dataset).take(len_val_ds)
+    print(cv_dataset.cardinality().numpy())
+    res = []
+    for i in cv_dataset:
+        res.append(i)
+    print("i got", len(res))
     return train_dataset, cv_dataset
 
 
@@ -102,100 +120,107 @@ def createFinalZip(zipFileName):
 
 
 def processArgs(**kwargs):
-    batch_size = 32
     epochs = 15
     path = None
     save_name = "Learning"
-    img_size = 256
+    train_size = None
+    val_size = None
     for key, value in kwargs.items():
         if value is not None:
             match key:
-                case 'batch_size':
-                    batch_size = value
                 case 'epochs':
                     epochs = value
                 case 'path':
                     path = value
                 case 'save_name':
                     save_name = value
-    return batch_size, epochs, path, save_name, img_size
+                case 'train_size':
+                    train_size = value
+                case 'val_size':
+                    val_size = value
+    return epochs, path, save_name, train_size, val_size
 
 
 def main(**kwargs):
     try:
-        batch, epochs, path, saveN, imgSize = processArgs(**kwargs)
+        epochs, path, saveN, train_size, val_size = processArgs(**kwargs)
         assert path is not None, "Please enter a directory path as parametter"
         assert os.path.isdir(path), "Please enter a directory as a parametter"
+        imgSize = 256
         input_shape = (imgSize, imgSize, 3)
+        batch = 32
+
+        print("train_size", train_size)
+        print("val_size", val_size)
 
         # Balance the dataset
         print("Balancing the dataset.....................")
-        balance(path)
+        # balance(path)
         print("..........................................done !\n")
 
         # Modify the dataset before the learning
         print("\nRemoving img background...................")
-        processImgDataSet(path)
+        # processImgDataSet(path)
         print("..........................................done !\n")
 
         # Datasets
         print("Loading dataset...........................")
         dataset = loadDataset("increased", imgSize)
-        train_ds, validation_ds = getDatasetPartitionTf(dataset)
-        train_ds = train_ds.cache().shuffle(1000).prefetch(
-            buffer_size=tf.data.AUTOTUNE)
-        validation_ds = validation_ds.cache().shuffle(1000).prefetch(
-            buffer_size=tf.data.AUTOTUNE)
+        train_ds, validation_ds = getDatasetPartitionTf(dataset, train_size, val_size)
+        # train_ds_size = tf.data.experimental.cardinality(train_ds).numpy()
+        # validation_ds_size = tf.data.experimental.cardinality(validation_ds).numpy()
+        print('Train Dataset size :', train_ds.cardinality().numpy())
+        print('Validation Dataset size :', validation_ds.cardinality().numpy())
         class_names = dataset.class_names
         print("..........................................done !\n")
 
         # CNN Model definition
-        print("Defining CNN model........................")
-        model = Sequential([
-            Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
-            MaxPooling2D((2, 2)),
-            Conv2D(32, (3, 3), activation='relu'),
-            MaxPooling2D((2, 2)),
-            Flatten(),
-            Dense(64, activation='relu'),
-            Dense(len(class_names), activation='softmax')
-        ])
-        print("..........................................done !\n")
+        # print("Defining CNN model........................")
+        # model = Sequential([
+        #     Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
+        #     MaxPooling2D((2, 2)),
+        #     Conv2D(32, (3, 3), activation='relu'),
+        #     MaxPooling2D((2, 2)),
+        #     Flatten(),
+        #     Dense(64, activation='relu'),
+        #     Dense(len(class_names), activation='softmax')
+        # ])
+        # print("..........................................done !\n")
 
-        # CNN Learning
-        print("Learning phase............................")
-        model.build(input_shape=input_shape)
-        model.compile(
-            loss=tf.keras.losses.SparseCategoricalCrossentropy(
-                from_logits=False),
-            optimizer='adam',
-            metrics=['accuracy'])
-        model.fit(
-            train_ds,
-            epochs=epochs,
-            batch_size=batch,
-            verbose=1,
-            validation_data=validation_ds
-        )
-        print("..........................................done !\n")
+        # # CNN Learning
+        # print("Learning phase............................")
+        # model.build(input_shape=input_shape)
+        # model.compile(
+        #     loss=tf.keras.losses.SparseCategoricalCrossentropy(
+        #         from_logits=False),
+        #     optimizer='adam',
+        #     metrics=['accuracy'])
+        # model.fit(
+        #     train_ds,
+        #     epochs=epochs,
+        #     batch_size=batch,
+        #     verbose=1,
+        #     validation_data=validation_ds
+        # )
+        # print("..........................................done !\n")
 
-        # Saving the model
-        print("Saving the model..........................")
-        model.save('model_param.keras')
-        np.savetxt("class_name.csv", class_names, delimiter=',', fmt='%s')
-        print("..........................................done !\n")
+        # # Saving the model
+        # print("Saving the model..........................")
+        # model.save('model_param.keras')
+        # np.savetxt("class_name.csv", class_names, delimiter=',', fmt='%s')
+        # print("..........................................done !\n")
 
-        # Besoin de creer le zip avec les learning et les images
-        print("Creating Learning.zip.....................")
-        createFinalZip(saveN + '.zip')
-        print("..........................................done !\n")
+        # # Besoin de creer le zip avec les learning et les images
+        # print("Creating Learning.zip.....................")
+        # createFinalZip(saveN + '.zip')
+        # print("..........................................done !\n")
 
-        # Besoin de creer le zip avec les learning et les images
-        print("Removing tmp files........................")
-        shutil.rmtree("increased")
-        os.remove('model_param.keras')
-        os.remove('class_names.csv')
-        print("..........................................done !\n")
+        # # Besoin de creer le zip avec les learning et les images
+        # print("Removing tmp files........................")
+        # shutil.rmtree("increased")
+        # os.remove('model_param.keras')
+        # os.remove('class_names.csv')
+        # print("..........................................done !\n")
 
     except Exception as err:
         print("Error: ", err)
@@ -205,14 +230,16 @@ def main(**kwargs):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Training program for Leaffliction")
-    parser.add_argument("--batch_size", "-b", type=int,
-                        help="Size of the images batch")
     parser.add_argument("--epochs", "-e", type=int,
                         help="Number of epochs for the training")
     parser.add_argument("--path", "-p", type=str,
                         help="Path to the dataset directory")
     parser.add_argument("--save_name", "-sn", type=str,
                         help="Name of the learning saving file")
+    parser.add_argument("--train_size", "-ts", type=int,
+                        help="Size of the training dataset")
+    parser.add_argument("--val_size", "-vs", type=int,
+                        help="Size of the validation dataset")
 
     args = parser.parse_args()
     kwargs = {key: getattr(args, key) for key in vars(args)}
