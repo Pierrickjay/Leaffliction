@@ -5,16 +5,17 @@ import cv2
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Flatten
+from Balance import balance
 import os
 import argparse
 import zipfile
+import shutil
 
 
 def loadDataset(path, img_size):
     return tf.keras.preprocessing.image_dataset_from_directory(
         path,
         shuffle=True,
-        # batch_size=batch_size,
         image_size=(img_size, img_size)
     )
 
@@ -29,7 +30,9 @@ def processImgDataSet(path):
     img_path_list = np.array([element for sous_liste in
                               img_path_list for element in sous_liste])
     list_path_long = list(set([img[2] for img in img_path_list]))
-    img_path_list = [[img[0], img[1], img[2].replace(os.path.commonpath(list_path_long) + '/', '') ] for img in img_path_list]
+    img_path_list = [[img[0], img[1], img[2].replace(
+        os.path.commonpath(list_path_long) + '/', '')]
+         for img in img_path_list]
     img_array = np.array(
          [np.array(Image.open(str(img_path[0] + "/" + img_path[1]), "r"))
           for img_path in img_path_list])
@@ -75,8 +78,8 @@ def removeBack(img, size_fill, enhance_val, buffer_size):
     return img_modified
 
 
-def get_dataset_partition_tf(ds, train_split=0.85,
-                             shuffle=True, shuffle_size=10000):
+def getDatasetPartitionTf(ds, train_split=0.85,
+                          shuffle=True, shuffle_size=10000):
     if shuffle:
         ds = ds.shuffle(shuffle_size, seed=12)
     len_train_dataset = int(len(ds) * train_split)
@@ -85,30 +88,49 @@ def get_dataset_partition_tf(ds, train_split=0.85,
     return train_dataset, cv_dataset
 
 
+def createFinalZip(learningFilePath, imgDir, zipFileName):
+    with zipfile.ZipFile(zipFileName, 'w') as zipf:
+        for rootDir, subDir, files in os.walk(imgDir):
+            for file in files:
+                fullPath = os.path.join(rootDir, file)
+                zipf.write(fullPath, os.path.relpath(fullPath, imgDir))
+        zipf.write(learningFilePath)
+
+
+def processArgs(**kwargs):
+    batch_size = 32
+    epochs = 15
+    path = None
+    save_dir = ""
+    save_name = "learnings"
+    img_size = 256
+    for key, value in kwargs.items():
+        if value is not None:
+            match key:
+                case 'batch_size':
+                    batch_size = value
+                case 'epochs':
+                    epochs = value
+                case 'path':
+                    path = value
+                case 'save_dir':
+                    save_dir = value
+                case 'save_name':
+                    save_name = value
+    return batch_size, epochs, path, save_dir, save_name, img_size
+
+
 def main(**kwargs):
     try:
-        batch_size = 32
-        epochs = 15
-        path = None
-        save_dir = ""
-        save_name = "learnings"
-        img_size = 256
-        for key, value in kwargs.items():
-            if value is not None:
-                match key:
-                    case 'batch_size':
-                        batch_size = value
-                    case 'epochs':
-                        epochs = value
-                    case 'path':
-                        path = value
-                    case 'save_dir':
-                        save_dir = value
-                    case 'save_name':
-                        save_name = value
+        batch, epochs, path, saveD, saveN, imgSize = processArgs(**kwargs)
         assert path is not None, "Please enter a directory path as parametter"
         assert os.path.isdir(path), "Please enter a directory as a parametter"
-        input_shape = (img_size, img_size, 3)
+        input_shape = (imgSize, imgSize, 3)
+
+        # Balance the dataset
+        print("Balancing the dataset\n")
+        balance(path)
+        print("......................done !\n")
 
         # Modify the dataset before the learning
         print("Removing img background\n")
@@ -117,8 +139,8 @@ def main(**kwargs):
 
         # Datasets
         print("Loading dataset\n")
-        dataset = loadDataset("increased", img_size)
-        train_ds, validation_ds = get_dataset_partition_tf(dataset)
+        dataset = loadDataset("increased", imgSize)
+        train_ds, validation_ds = getDatasetPartitionTf(dataset)
         train_ds = train_ds.cache().shuffle(1000).prefetch(
             buffer_size=tf.data.AUTOTUNE)
         validation_ds = validation_ds.cache().shuffle(1000).prefetch(
@@ -150,7 +172,7 @@ def main(**kwargs):
         model.fit(
             train_ds,
             epochs=epochs,
-            batch_size=batch_size,
+            batch_size=batch,
             verbose=1,
             validation_data=validation_ds
         )
@@ -158,10 +180,19 @@ def main(**kwargs):
 
         # Saving the model
         print("Saving the model\n")
-        model.save(save_dir + save_name + '.keras')
+        model.save(saveD + saveN + '.keras')
         print(".................done !\n")
 
         # Besoin de creer le zip avec les learning et les images
+        print("Creating Learning.zip\n")
+        createFinalZip(saveD + saveN + '.keras', "increased", 'Learning.zip')
+        print("......................done !\n")
+
+        # Besoin de creer le zip avec les learning et les images
+        print("Removing tmp files\n")
+        shutil.rmtree("increased")
+        os.remove(saveD + saveN + '.keras')
+        print("...................done !\n")
 
     except Exception as err:
         print("Error: ", err)
