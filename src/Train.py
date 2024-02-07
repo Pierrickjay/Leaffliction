@@ -88,13 +88,17 @@ def getDatasetPartitionTf(ds, train_split=0.85,
     return train_dataset, cv_dataset
 
 
-def createFinalZip(learningFilePath, imgDir, zipFileName):
+def createFinalZip(zipFileName):
+    learningFilePath = "model_param.keras"
+    classNamesCsv = "class_names.csv"
+    imgDir = "increased"
     with zipfile.ZipFile(zipFileName, 'w') as zipf:
         for rootDir, subDir, files in os.walk(imgDir):
             for file in files:
                 fullPath = os.path.join(rootDir, file)
                 zipf.write(fullPath, os.path.relpath(fullPath, imgDir))
         zipf.write(learningFilePath)
+        zipf.write(classNamesCsv)
 
 
 def processArgs(**kwargs):
@@ -125,17 +129,17 @@ def main(**kwargs):
         input_shape = (imgSize, imgSize, 3)
 
         # Balance the dataset
-        # print("Balancing the dataset\n")
+        # print("Balancing the dataset.....................")
         # balance(path)
-        # print("......................done !\n")
+        # print("..........................................done !\n")
 
         # Modify the dataset before the learning
-        print("Removing img background\n")
+        print("\nRemoving img background...................")
         processImgDataSet(path)
-        print("........................done !\n")
+        print("..........................................done !\n")
 
         # Datasets
-        print("Loading dataset\n")
+        print("Loading dataset...........................")
         dataset = loadDataset("increased", imgSize)
         train_ds, validation_ds = getDatasetPartitionTf(dataset)
         train_ds = train_ds.cache().shuffle(1000).prefetch(
@@ -143,10 +147,10 @@ def main(**kwargs):
         validation_ds = validation_ds.cache().shuffle(1000).prefetch(
             buffer_size=tf.data.AUTOTUNE)
         class_names = dataset.class_names
-        print("................done !\n")
+        print("..........................................done !\n")
 
         # CNN Model definition
-        print("Defining CNN model\n")
+        print("Defining CNN model........................")
         model = Sequential([
             Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
             MaxPooling2D((2, 2)),
@@ -156,10 +160,10 @@ def main(**kwargs):
             Dense(64, activation='relu'),
             Dense(len(class_names), activation='softmax')
         ])
-        print("...................done !\n")
+        print("..........................................done !\n")
 
         # CNN Learning
-        print("Learning phase\n")
+        print("Learning phase............................")
         model.build(input_shape=input_shape)
         model.compile(
             loss=tf.keras.losses.SparseCategoricalCrossentropy(
@@ -173,23 +177,25 @@ def main(**kwargs):
             verbose=1,
             validation_data=validation_ds
         )
-        print("...............done !\n")
+        print("..........................................done !\n")
 
         # Saving the model
-        print("Saving the model\n")
+        print("Saving the model..........................")
         model.save('model_param.keras')
-        print(".................done !\n")
+        np.savetxt("class_name.csv", class_names, delimiter=',', fmt='%s')
+        print("..........................................done !\n")
 
         # Besoin de creer le zip avec les learning et les images
-        print("Creating Learning.zip\n")
-        createFinalZip('model_param.keras', "increased", saveN + '.zip')
-        print("......................done !\n")
+        print("Creating Learning.zip.....................")
+        createFinalZip(saveN + '.zip')
+        print("..........................................done !\n")
 
         # Besoin de creer le zip avec les learning et les images
-        print("Removing tmp files\n")
+        print("Removing tmp files........................")
         shutil.rmtree("increased")
         os.remove('model_param.keras')
-        print("...................done !\n")
+        os.remove('class_names.csv')
+        print("..........................................done !\n")
 
     except Exception as err:
         print("Error: ", err)
