@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 from Distribution import retrieve_file_subdir
 from Augmentation import save_in
+from Pseudo_landmark_change import x_axis_pseudolandmarks
 from plantcv import plantcv as pcv
 import cv2
 import sys
@@ -10,6 +11,7 @@ import os
 import argparse
 import pandas as pd
 from sys import argv
+
 
 def histogram_with_colors(img, color_spaces, to_save=False):
     histograms = []
@@ -81,13 +83,12 @@ def roi_img(img, thresh) :
     green[thresh == 0] = [93, 255, 51]
     green[mask_with_no_buffer == 255] = img[mask_with_no_buffer == 255]
     x, y, h, w = 0, 0, 256, 256
-    roi = green[y:y+h, x:x+w]
     cv2.rectangle(green, (x, y), (x+w, y+h), (255, 0, 0),10)
     return green
 
-def pseudo_landmarks(img, thresh):
-    pcv.params.debug = "plot"
-    top, bottom, center_v = pcv.homology.x_axis_pseudolandmarks(img=img, mask=thresh)
+def pseudo_landmarks(img, thresh, plot=True):
+    top, bottom, center_v, img2 = x_axis_pseudolandmarks(img=img, mask=thresh)
+    return img2
 
 def analyze_object(img, thresh):
     a_fill_image = pcv.fill(bin_img=thresh, size=3)
@@ -102,26 +103,29 @@ def plot_img(imgs):
 
 def transfo_all(src, dest):
     df = retrieve_file_subdir(src)
+    print(df)
     print(df.index)
     for column in df.columns:
         if not os.path.isdir(dest + "/" + os.path.dirname(df.loc[0, column])):
             os.makedirs(dest + "/" + os.path.dirname(df.loc[0, column]))
-        for index in df.index:
-            img = np.array(Image.open(df.loc[index, column]))
+        for value in df[column]:
+            # print(value)
+            img = np.array(Image.open(value))
             gray_img = pcv.rgb2gray_cmyk(rgb_img=img, channel='y')
             thresh = pcv.threshold.binary(gray_img=gray_img, threshold=115, object_type="light")
             # need to apply a filter to tresh to harmonize the pixel
             mask = mask_img(img, thresh)
             roi = roi_img(img, thresh)
             analy = analyze_object(img, thresh)
-            # pseud = pseudo_landmarks(img, thresh)
+            pseud = pseudo_landmarks(img, thresh, False)
             histo = histogram_with_colors(img, color_spaces=["blue", "blue-yellow", "green", "green-magenta", "hue", "lightness", "red", "saturation", "value"], to_save=True)
-            plot_hist(histo, dest + "/" + df.loc[index, column] + "_histo.png", to_save=True)
-            cv2.imwrite(dest + "/" + df.loc[index, column] + "_tresh.png" , thresh)
-            cv2.imwrite(dest + "/" + df.loc[index, column] + "_mask.png" , mask)
-            cv2.imwrite(dest + "/" + df.loc[index, column] + "_analyze.png", analy)
-            cv2.imwrite(dest + "/" + df.loc[index, column] + "_roi.png", roi)
-            # cv2.imwrite( dest + "/" + df.loc[index, column] + "_tresh" ,thresh)
+            plot_hist(histo, dest + "/" + value + "_histo.png", to_save=True)
+            cv2.imwrite(dest + "/" + value + "_tresh.png" , thresh)
+            cv2.imwrite(dest + "/" + value + "_mask.png" , mask)
+            cv2.imwrite(dest + "/" + value + "_analyze.png", analy)
+            cv2.imwrite(dest + "/" + value + "_roi.png", roi)
+            cv2.imwrite(dest + "/" + value + "_pseu.png", pseud)
+            cv2.imwrite(dest + "/" + value + "_tresh.png" ,thresh)
 
 
 def transfo_img(path=None, src=None, dest=None):
@@ -135,9 +139,9 @@ def transfo_img(path=None, src=None, dest=None):
         mask_imag = mask_img(img, thresh)
         roi_imag = roi_img(img, thresh)
         analyze = analyze_object(img, thresh)
-        # pseud = pseudo_landmarks(img, thresh)
         histo = histogram_with_colors(img, color_spaces=["blue", "blue-yellow", "green", "green-magenta", "hue", "lightness", "red", "saturation", "value"])
-        plot_img([img, thresh, mask_imag, roi_imag, analyze])
+        pseud = pseudo_landmarks(img, thresh)
+        plot_img([img, thresh, mask_imag, roi_imag, analyze, pseud])
         plot_hist(histo)
 
 
