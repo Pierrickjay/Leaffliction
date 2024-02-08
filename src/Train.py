@@ -12,15 +12,19 @@ import zipfile
 import shutil
 
 
-def loadDataset(path, img_size):
+def loadDataset(path, img_size, batch):
     return tf.keras.preprocessing.image_dataset_from_directory(
         path,
         shuffle=True,
-        image_size=(img_size, img_size)
+        image_size=(img_size, img_size),
+        batch_size=batch
     )
 
 
 def processImgDataSet(path):
+    if os.path.isdir("increased"):
+        print("The increased directory already exists. No modification made.")
+        return
     img_path_list = [
          [[foldername, fn, '/'.join(
               [e for e in foldername.split("/") if e not in ["..", "."]])]
@@ -78,31 +82,22 @@ def removeBack(img, size_fill, enhance_val, buffer_size):
     return img_modified
 
 
-def getDatasetPartitionTf(ds, train_size, val_size):
-    train_split=0.85
-    shuffle_size=100
+def getDsPartitionTf(ds, train_size, val_size):
+    train_split = 0.85
+    shuffle_size = 100
     ds = ds.shuffle(shuffle_size, seed=12)
     if train_size is not None:
-        len_train_dataset = int(train_size / 32.0)
-    else :
+        len_train_dataset = int(train_size / 32.0) + 1
+    else:
         len_train_dataset = int(len(ds) * train_split)
     if val_size is not None:
-        len_val_ds = int(val_size / 32.0)
+        len_val_ds = int(val_size / 32.0) + 1
     else:
         len_val_ds = int((15.0/85.0) * len_train_dataset)
-
-    print("len_train_dataset",len_train_dataset)
-    print("len_val_ds",len_val_ds)
-    print(ds.cardinality().numpy())
     train_dataset = ds.take(len_train_dataset)
-    print(train_dataset.cardinality().numpy())
-
+    print(f"-----Train dataset created with {len(train_dataset)*32} images")
     cv_dataset = ds.skip(len_train_dataset).take(len_val_ds)
-    print(cv_dataset.cardinality().numpy())
-    res = []
-    for i in cv_dataset:
-        res.append(i)
-    print("i got", len(res))
+    print(f"-----Validation dataset created with {len(cv_dataset)*32} images")
     return train_dataset, cv_dataset
 
 
@@ -150,77 +145,70 @@ def main(**kwargs):
         input_shape = (imgSize, imgSize, 3)
         batch = 32
 
-        print("train_size", train_size)
-        print("val_size", val_size)
-
         # Balance the dataset
-        print("Balancing the dataset.....................")
-        # balance(path)
-        print("..........................................done !\n")
+        print("Balancing the dataset....................................")
+        balance(path)
+        print(".................................................done !\n")
 
         # Modify the dataset before the learning
-        print("\nRemoving img background...................")
-        # processImgDataSet(path)
-        print("..........................................done !\n")
+        print("\nRemoving img background (this can take some time)......")
+        processImgDataSet(path)
+        print(".................................................done !\n")
 
         # Datasets
-        print("Loading dataset...........................")
-        dataset = loadDataset("increased", imgSize)
-        train_ds, validation_ds = getDatasetPartitionTf(dataset, train_size, val_size)
-        # train_ds_size = tf.data.experimental.cardinality(train_ds).numpy()
-        # validation_ds_size = tf.data.experimental.cardinality(validation_ds).numpy()
-        print('Train Dataset size :', train_ds.cardinality().numpy())
-        print('Validation Dataset size :', validation_ds.cardinality().numpy())
-        class_names = dataset.class_names
-        print("..........................................done !\n")
+        print("Loading dataset..........................................")
+        ds = loadDataset("increased", imgSize, batch)
+        train_ds, validation_ds = getDsPartitionTf(ds, train_size, val_size)
+        class_names = ds.class_names
+        print(".................................................done !\n")
 
         # CNN Model definition
-        # print("Defining CNN model........................")
-        # model = Sequential([
-        #     Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
-        #     MaxPooling2D((2, 2)),
-        #     Conv2D(32, (3, 3), activation='relu'),
-        #     MaxPooling2D((2, 2)),
-        #     Flatten(),
-        #     Dense(64, activation='relu'),
-        #     Dense(len(class_names), activation='softmax')
-        # ])
-        # print("..........................................done !\n")
+        print("Defining CNN model.......................................")
+        model = Sequential([
+            Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
+            MaxPooling2D((2, 2)),
+            Conv2D(32, (3, 3), activation='relu'),
+            MaxPooling2D((2, 2)),
+            Flatten(),
+            Dense(64, activation='relu'),
+            Dense(len(class_names), activation='softmax')
+        ])
+        print(".................................................done !\n")
 
-        # # CNN Learning
-        # print("Learning phase............................")
-        # model.build(input_shape=input_shape)
-        # model.compile(
-        #     loss=tf.keras.losses.SparseCategoricalCrossentropy(
-        #         from_logits=False),
-        #     optimizer='adam',
-        #     metrics=['accuracy'])
-        # model.fit(
-        #     train_ds,
-        #     epochs=epochs,
-        #     batch_size=batch,
-        #     verbose=1,
-        #     validation_data=validation_ds
-        # )
-        # print("..........................................done !\n")
+        # CNN Learning
+        print("Learning phase...........................................")
+        model.build(input_shape=input_shape)
+        model.compile(
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(
+                from_logits=False),
+            optimizer='adam',
+            metrics=['accuracy'])
+        model.fit(
+            train_ds,
+            epochs=epochs,
+            batch_size=batch,
+            verbose=1,
+            validation_data=validation_ds
+        )
+        print(".................................................done !\n")
 
-        # # Saving the model
-        # print("Saving the model..........................")
-        # model.save('model_param.keras')
-        # np.savetxt("class_name.csv", class_names, delimiter=',', fmt='%s')
-        # print("..........................................done !\n")
+        # Saving the model
+        print("Saving the model.........................................")
+        model.save('model_param.keras')
+        np.savetxt("class_names.csv", class_names, delimiter=',', fmt='%s')
+        print(".................................................done !\n")
 
-        # # Besoin de creer le zip avec les learning et les images
-        # print("Creating Learning.zip.....................")
-        # createFinalZip(saveN + '.zip')
-        # print("..........................................done !\n")
+        # Besoin de creer le zip avec les learning et les images
+        print("Creating Learning.zip....................................")
+        createFinalZip(saveN + '.zip')
+        print(".................................................done !\n")
 
-        # # Besoin de creer le zip avec les learning et les images
-        # print("Removing tmp files........................")
-        # shutil.rmtree("increased")
-        # os.remove('model_param.keras')
-        # os.remove('class_names.csv')
-        # print("..........................................done !\n")
+        # Besoin de creer le zip avec les learning et les images
+        print("Removing tmp files.......................................")
+        shutil.rmtree("increased")
+        os.remove('model_param.keras')
+        os.remove('class_names.csv')
+        print(".................................................done !\n")
 
     except Exception as err:
         print("Error: ", err)
