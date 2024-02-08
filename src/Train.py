@@ -146,24 +146,24 @@ def main(**kwargs):
         batch = 32
 
         # Balance the dataset
-        print("Balancing the dataset....................................")
+        print("Balancing the dataset.................................")
         balance(path)
-        print(".................................................done !\n")
+        print("......................................................done !\n")
 
         # Modify the dataset before the learning
-        print("\nRemoving img background (this can take some time)......")
+        print("\nRemoving img background (this can take some time)...")
         processImgDataSet(path)
-        print(".................................................done !\n")
+        print("......................................................done !\n")
 
         # Datasets
-        print("Loading dataset..........................................")
+        print("Loading dataset.......................................")
         ds = loadDataset("increased", imgSize, batch)
         train_ds, validation_ds = getDsPartitionTf(ds, train_size, val_size)
         class_names = ds.class_names
-        print(".................................................done !\n")
+        print("......................................................done !\n")
 
         # CNN Model definition
-        print("Defining CNN model.......................................")
+        print("Defining CNN model....................................")
         model = Sequential([
             Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
             MaxPooling2D((2, 2)),
@@ -173,10 +173,10 @@ def main(**kwargs):
             Dense(64, activation='relu'),
             Dense(len(class_names), activation='softmax')
         ])
-        print(".................................................done !\n")
+        print("......................................................done !\n")
 
         # CNN Learning
-        print("Learning phase...........................................")
+        print("Learning phase........................................")
         model.build(input_shape=input_shape)
         model.compile(
             loss=tf.keras.losses.SparseCategoricalCrossentropy(
@@ -190,25 +190,25 @@ def main(**kwargs):
             verbose=1,
             validation_data=validation_ds
         )
-        print(".................................................done !\n")
+        print("......................................................done !\n")
 
         # Saving the model
-        print("Saving the model.........................................")
+        print("Saving the model......................................")
         model.save('model_param.keras')
         np.savetxt("class_names.csv", class_names, delimiter=',', fmt='%s')
-        print(".................................................done !\n")
+        print("......................................................done !\n")
 
         # Besoin de creer le zip avec les learning et les images
-        print("Creating Learning.zip....................................")
+        print("Creating Learning.zip.................................")
         createFinalZip(saveN + '.zip')
-        print(".................................................done !\n")
+        print("......................................................done !\n")
 
         # Besoin de creer le zip avec les learning et les images
-        print("Removing tmp files.......................................")
+        print("Removing tmp files....................................")
         shutil.rmtree("increased")
         os.remove('model_param.keras')
         os.remove('class_names.csv')
-        print(".................................................done !\n")
+        print("......................................................done !\n")
 
     except Exception as err:
         print("Error: ", err)
