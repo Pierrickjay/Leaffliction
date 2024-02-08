@@ -14,15 +14,11 @@ def retrieve_file_subdir(dir):
                 for filename in filenames:
                     file_names.append(foldername + "/" + subdirectory + "/" + filename)
         else :
-            print("fukc")
-            print(foldername)
             for filename in filenames:
                     file_names.append(foldername + "/" + filename)
         data[base_foldername] = pd.Series(file_names)
-        print("base = ", base_foldername)
     df = pd.concat(data, axis=1)  # To deal with dict
     df.dropna(axis=1, how="all", inplace=True)
-    print(df)
     return df
 
 

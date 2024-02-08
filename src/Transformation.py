@@ -1,16 +1,18 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from PIL import Image, ImageOps, ImageFilter, ImageEnhance
+from PIL import Image
+from Distribution import retrieve_file_subdir
+from Augmentation import save_in
 from plantcv import plantcv as pcv
-from plantcv.parallel import WorkflowInputs
 import cv2
+import sys
 import os
 import argparse
 import pandas as pd
 from sys import argv
 
-def histogram_with_colors(img, color_spaces):
-    plt.figure(figsize=(8, 6))
+def histogram_with_colors(img, color_spaces, to_save=False):
+    histograms = []
     for color_space in color_spaces:
         if color_space == "blue":
             channel = img[1:, :, 0]
@@ -38,14 +40,26 @@ def histogram_with_colors(img, color_spaces):
             channel = hsv[1:, :, 2]
         hist = cv2.calcHist([channel], [0], None, [256], [0, 256])
         hist = hist / np.sum(hist) * 100
-        plt.plot(hist, label= color_space)
-    plt.title('Histogram')
+        histograms.append((color_space, hist))
+    return histograms
+
+def plot_hist(histo, output_path=None, to_save=False):
+    plt.figure(figsize=(8, 6))
+    for hist in (histo):
+        color_space = hist[0]  # Assign a default label if color space info is not available
+        plt.plot(hist[1], label=color_space)
+    plt.title('Histograms')
     plt.xlabel('Pixel Intensity')
-    plt.ylabel('Frequency in %')
+    plt.ylabel('Frequency')
     plt.xlim([0, 256])
     plt.grid(True)
     plt.legend()
-    plt.show()
+    if to_save == True:
+        plt.savefig(output_path)  # Save the plot as an image file
+        plt.close()  # Close the plot to free up memory
+    else:
+        plt.show()
+
 
 def gaussian_blur(gray_img):
     thresh = pcv.threshold.binary(gray_img=gray_img, threshold=115, object_type="light")
@@ -54,8 +68,7 @@ def gaussian_blur(gray_img):
 def mask_img(img, thresh):
     result = np.ones_like(img) * 255
     result[thresh == 255] = img[thresh == 255]
-    mask_img = result
-    pcv.plot_image(result)
+    return result
 
 def roi_img(img, thresh) :
     gray_img = pcv.rgb2gray_lab(rgb_img=img, channel='a')
@@ -70,7 +83,7 @@ def roi_img(img, thresh) :
     x, y, h, w = 0, 0, 256, 256
     roi = green[y:y+h, x:x+w]
     cv2.rectangle(green, (x, y), (x+w, y+h), (255, 0, 0),10)
-    pcv.plot_image(green)
+    return green
 
 def pseudo_landmarks(img, thresh):
     pcv.params.debug = "plot"
@@ -81,20 +94,51 @@ def analyze_object(img, thresh):
     roi = pcv.roi.rectangle(img=img, x=0, y=0, h=256, w=256)
     mask = pcv.roi.filter(mask=a_fill_image, roi=roi, roi_type="partial")
     shape_img = pcv.analyze.size(img=img,labeled_mask=mask, n_labels=1)
-    pcv.plot_image(shape_img)
+    return shape_img
 
-def transfo_img(path):
-    img = np.array(Image.open(path))
-    gray_img = pcv.rgb2gray_cmyk(rgb_img=img, channel='y')
-    thresh = pcv.threshold.binary(gray_img=gray_img, threshold=115, object_type="light")
-    # need to apply a filter to tresh to harmonize the pixel
+def plot_img(imgs):
+    for img in imgs:
+        pcv.plot_image(img)
 
-    pcv.plot_image(thresh)
-    mask_img(img, thresh)
-    roi_img(img, thresh)
-    analyze_object(img, thresh)
-    pseudo_landmarks(img, thresh)
-    histogram_with_colors(img, color_spaces=["blue", "blue-yellow", "green", "green-magenta", "hue", "lightness", "red", "saturation", "value"])
+def transfo_all(src, dest):
+    df = retrieve_file_subdir(src)
+    print(df.index)
+    for column in df.columns:
+        if not os.path.isdir(dest + "/" + os.path.dirname(df.loc[0, column])):
+            os.makedirs(dest + "/" + os.path.dirname(df.loc[0, column]))
+        for index in df.index:
+            img = np.array(Image.open(df.loc[index, column]))
+            gray_img = pcv.rgb2gray_cmyk(rgb_img=img, channel='y')
+            thresh = pcv.threshold.binary(gray_img=gray_img, threshold=115, object_type="light")
+            # need to apply a filter to tresh to harmonize the pixel
+            mask = mask_img(img, thresh)
+            roi = roi_img(img, thresh)
+            analy = analyze_object(img, thresh)
+            # pseud = pseudo_landmarks(img, thresh)
+            histo = histogram_with_colors(img, color_spaces=["blue", "blue-yellow", "green", "green-magenta", "hue", "lightness", "red", "saturation", "value"], to_save=True)
+            plot_hist(histo, dest + "/" + df.loc[index, column] + "_histo.png", to_save=True)
+            cv2.imwrite(dest + "/" + df.loc[index, column] + "_tresh.png" , thresh)
+            cv2.imwrite(dest + "/" + df.loc[index, column] + "_mask.png" , mask)
+            cv2.imwrite(dest + "/" + df.loc[index, column] + "_analyze.png", analy)
+            cv2.imwrite(dest + "/" + df.loc[index, column] + "_roi.png", roi)
+            # cv2.imwrite( dest + "/" + df.loc[index, column] + "_tresh" ,thresh)
+
+
+def transfo_img(path=None, src=None, dest=None):
+    if src:
+        transfo_all(src, dest)
+    else:
+        img = np.array(Image.open(path))
+        gray_img = pcv.rgb2gray_cmyk(rgb_img=img, channel='y')
+        thresh = pcv.threshold.binary(gray_img=gray_img, threshold=115, object_type="light")
+        # need to apply a filter to tresh to harmonize the pixel
+        mask_imag = mask_img(img, thresh)
+        roi_imag = roi_img(img, thresh)
+        analyze = analyze_object(img, thresh)
+        # pseud = pseudo_landmarks(img, thresh)
+        histo = histogram_with_colors(img, color_spaces=["blue", "blue-yellow", "green", "green-magenta", "hue", "lightness", "red", "saturation", "value"])
+        plot_img([img, thresh, mask_imag, roi_imag, analyze])
+        plot_hist(histo)
 
 
 def main(file=None, src=None, dst=None):
@@ -116,7 +160,7 @@ def main(file=None, src=None, dst=None):
         else:
             raise FileNotFoundError("Invalid source path:", src)
         pcv.params.debug = "None"
-        transfo_img(file)
+        transfo_img(file, src, dst)
     except Exception as err:
         print("Error: ", err)
         return 1
