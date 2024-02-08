@@ -138,6 +138,7 @@ def processArgs(**kwargs):
 
 def main(**kwargs):
     try:
+        print("\n")
         epochs, path, saveN, train_size, val_size = processArgs(**kwargs)
         assert path is not None, "Please enter a directory path as parametter"
         assert os.path.isdir(path), "Please enter a directory as a parametter"
