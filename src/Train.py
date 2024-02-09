@@ -153,12 +153,13 @@ def main(**kwargs):
 
         # Modify the dataset before the learning
         print("\nRemoving img background (this can take some time)...")
-        processImgDataSet(path)
+        # processImgDataSet(path)
         print("......................................................done !\n")
 
         # Datasets
         print("Loading dataset.......................................")
-        ds = loadDataset("increased", imgSize, batch)
+        # ds = loadDataset("increased", imgSize, batch)
+        ds = loadDataset(path, imgSize, batch)
         train_ds, validation_ds = getDsPartitionTf(ds, train_size, val_size)
         class_names = ds.class_names
         print("......................................................done !\n")
@@ -206,7 +207,7 @@ def main(**kwargs):
 
         # Besoin de creer le zip avec les learning et les images
         print("Removing tmp files....................................")
-        shutil.rmtree("increased")
+        # shutil.rmtree("increased")
         os.remove('model_param.keras')
         os.remove('class_names.csv')
         print("......................................................done !\n")

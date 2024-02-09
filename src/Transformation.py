@@ -173,6 +173,13 @@ def transfo_all(src, dest):
         cv2.imwrite(dest + "/" + value + "_roi.png", roi)
         cv2.imwrite(dest + "/" + value + "_pseu.png", pseud)
         cv2.imwrite(dest + "/" + value + "_tresh.png", thresh)
+        # Liberation de la memoire
+        del gray_img
+        del thresh
+        del mask
+        del roi
+        del analy
+        del pseud
         img_img.close()
 
 
