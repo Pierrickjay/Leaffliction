@@ -104,12 +104,12 @@ def getDsPartitionTf(ds, train_size, val_size):
 def createFinalZip(zipFileName):
     learningFilePath = "model_param.keras"
     classNamesCsv = "class_names.csv"
-    imgDir = "increased"
+    # imgDir = "increased"
     with zipfile.ZipFile(zipFileName, 'w') as zipf:
-        for rootDir, subDir, files in os.walk(imgDir):
-            for file in files:
-                fullPath = os.path.join(rootDir, file)
-                zipf.write(fullPath, os.path.relpath(fullPath, imgDir))
+        # for rootDir, subDir, files in os.walk(imgDir):
+        #     for file in files:
+        #         fullPath = os.path.join(rootDir, file)
+        #         zipf.write(fullPath, os.path.relpath(fullPath, imgDir))
         zipf.write(learningFilePath)
         zipf.write(classNamesCsv)
 
