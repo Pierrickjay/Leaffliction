@@ -9,7 +9,7 @@ from Balance import balance
 import os
 import argparse
 import zipfile
-import shutil
+# import shutil
 
 
 def loadDataset(path, img_size, batch):
