@@ -10,7 +10,8 @@ from plantcv.plantcv import outputs
 
 def x_axis_pseudolandmarks(img, mask, label=None):
     """
-    Divide up object contour into 20 equidistance segments and generate landmarks for each
+    Divide up object contour into 20 equidistance segments and generate
+    landmarks for each
 
     Inputs:
     img          = RGB or grayscale image data for plotting
@@ -89,19 +90,23 @@ def x_axis_pseudolandmarks(img, mask, label=None):
             cols = []
             ups = []
             bps = []
-            # Get a continuous list of the values between the left and the right of the interval save as vals
+            # Get a continuous list of the values between the left and the
+            # right of the interval save as vals
             vals = list(range(left_point, right_point))
-            # For each col... get all coordinates from object contour that match col
+            # For each col... get all coordinates from object contour that
+            # match col
             for v in vals:
                 # Value is all entries that match the col
                 value = obj[v == obj[:, 0, 0]]
                 if len(value) > 0:
-                    # Could potentially be more than two points in all contour in each pixel row
+                    # Could potentially be more than two points in all contour
+                    # in each pixel row
                     # Grab largest y coordinate (row)
                     largest = value[:, 0, 1].max()
                     # Grab smallest y coordinate (row)
                     smallest = value[:, 0, 1].min()
-                    # Take the difference between the two (this is how far across the object is on this plane)
+                    # Take the difference between the two (this is how far
+                    # across the object is on this plane)
                     col_width = largest - smallest
                     # Append this value to a list
                     cols.append(col_width)
@@ -140,7 +145,8 @@ def x_axis_pseudolandmarks(img, mask, label=None):
                 smy = xval
                 x_centroids.append(int(smx))
                 y_centroids.append(int(smy))
-        # Get the indicie of the largest median/average y-axis value (if there is a tie it takes largest index)
+        # Get the indicie of the largest median/average y-axis value (if there
+                # is a tie it takes largest index)
         # indice_median = col_median.index(max(col_median))
         # indice_ave = col_ave.index(max(col_ave))
         # median_value = col_median[indice_median]
@@ -160,21 +166,27 @@ def x_axis_pseudolandmarks(img, mask, label=None):
         for i in top:
             x = i[0, 0]
             y = i[0, 1]
-            cv2.circle(img2, (int(x), int(y)), params.line_thickness, (255, 0, 0), -1)
+            cv2.circle(img2, (int(x), int(y)), params.line_thickness,
+                       (255, 0, 0), -1)
         for i in bottom:
             x = i[0, 0]
             y = i[0, 1]
-            cv2.circle(img2, (int(x), int(y)), params.line_thickness, (255, 0, 255), -1)
+            cv2.circle(img2, (int(x), int(y)), params.line_thickness,
+                       (255, 0, 255), -1)
         for i in center_v:
             x = i[0, 0]
             y = i[0, 1]
-            cv2.circle(img2, (int(x), int(y)), params.line_thickness, (0, 79, 255), -1)
+            cv2.circle(img2, (int(x), int(y)), params.line_thickness,
+                       (0, 79, 255), -1)
 
         _debug(visual=img2,
-               filename=os.path.join(params.debug_outdir, (str(params.device) + '_x_axis_pseudolandmarks.png')))
+               filename=os.path.join(
+                   params.debug_outdir, (str(params.device)
+                                         + '_x_axis_pseudolandmarks.png')))
 
     elif extent < 21:
-        # If the width of the object is less than 20 pixels just make the object a 20 pixel rectangle
+        # If the width of the object is less than 20 pixels just make the
+        # object a 20 pixel rectangle
         x, y, width, _ = cv2.boundingRect(obj)
         x_coords = list(range(x, x + 20))
         u_points = [y] * 20
@@ -197,18 +209,23 @@ def x_axis_pseudolandmarks(img, mask, label=None):
         for i in top:
             x = i[0, 0]
             y = i[0, 1]
-            cv2.circle(img2, (int(x), int(y)), params.line_thickness, (255, 0, 0), -1)
+            cv2.circle(img2, (int(x), int(y)), params.line_thickness,
+                       (255, 0, 0), -1)
         for i in bottom:
             x = i[0, 0]
             y = i[0, 1]
-            cv2.circle(img2, (int(x), int(y)), params.line_thickness, (255, 0, 255), -1)
+            cv2.circle(img2, (int(x), int(y)), params.line_thickness,
+                       (255, 0, 255), -1)
         for i in center_v:
             x = i[0, 0]
             y = i[0, 1]
-            cv2.circle(img2, (int(x), int(y)), params.line_thickness, (0, 79, 255), -1)
+            cv2.circle(img2, (int(x), int(y)), params.line_thickness,
+                       (0, 79, 255), -1)
 
         _debug(visual=img2,
-               filename=os.path.join(params.debug_outdir, (str(params.device) + '_x_axis_pseudolandmarks.png')))
+               filename=os.path.join(
+                   params.debug_outdir, (str(params.device)
+                                         + '_x_axis_pseudolandmarks.png')))
 
     # Store into global measurements
     for pt in top:
@@ -218,14 +235,21 @@ def x_axis_pseudolandmarks(img, mask, label=None):
     for pt in center_v:
         center_v_list.append(pt[0].tolist())
 
-    outputs.add_observation(sample=label, variable='top_lmk', trait='top landmark coordinates',
-                            method='plantcv.plantcv.x_axis_pseudolandmarks', scale='none', datatype=tuple,
+    outputs.add_observation(sample=label,
+                            variable='top_lmk',
+                            trait='top landmark coordinates',
+                            method='plantcv.plantcv.x_axis_pseudolandmarks',
+                            scale='none', datatype=tuple,
                             value=tuple(top_list), label='none')
-    outputs.add_observation(sample=label, variable='bottom_lmk', trait='bottom landmark coordinates',
-                            method='plantcv.plantcv.x_axis_pseudolandmarks', scale='none', datatype=tuple,
+    outputs.add_observation(sample=label, variable='bottom_lmk',
+                            trait='bottom landmark coordinates',
+                            method='plantcv.plantcv.x_axis_pseudolandmarks',
+                            scale='none', datatype=tuple,
                             value=tuple(bottom_list), label='none')
-    outputs.add_observation(sample=label, variable='center_v_lmk', trait='center vertical landmark coordinates',
-                            method='plantcv.plantcv.x_axis_pseudolandmarks', scale='none', datatype=tuple,
+    outputs.add_observation(sample=label, variable='center_v_lmk',
+                            trait='center vertical landmark coordinates',
+                            method='plantcv.plantcv.x_axis_pseudolandmarks',
+                            scale='none', datatype=tuple,
                             value=tuple(center_v_list), label='none')
 
     return top, bottom, center_v, img2

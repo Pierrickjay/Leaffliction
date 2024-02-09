@@ -1,6 +1,5 @@
 import os
 from sys import argv
-import random
 from PIL import Image
 from Augmentation import create_dir_if_needed, augment_images
 from Augmentation import rotating_img, fliping_img, bluring_img
@@ -41,6 +40,7 @@ def inc(max, nameDir, actualsize):
         a += 1
     if actualsize + to_add < max:
         inc(max, nameDir, actualsize + to_add)
+
 
 def increment_to_balance(path, file_count):
     max = file_count.max()

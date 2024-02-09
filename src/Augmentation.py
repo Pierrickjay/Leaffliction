@@ -6,8 +6,6 @@ from sys import argv
 
 def save_in(file_path, img, _type):
     filepath_split = os.path.splitext(file_path)
-    file_name_before = os.path.splitext(os.path.basename(file_path))
-    Nfile_name = file_name_before[0] + _type + file_name_before[1]
     new_path = filepath_split[0] + _type + filepath_split[1]
     img.save(new_path)
 
