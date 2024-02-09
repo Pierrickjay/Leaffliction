@@ -9,8 +9,6 @@ def save_in(file_path, img, _type):
     file_name_before = os.path.splitext(os.path.basename(file_path))
     Nfile_name = file_name_before[0] + _type + file_name_before[1]
     new_path = filepath_split[0] + _type + filepath_split[1]
-    img.save("augmented_directory/"
-             + os.path.dirname(file_path) + "/" + Nfile_name)
     img.save(new_path)
 
 
@@ -133,7 +131,6 @@ def main():
         assert len(argv) == 2, "Please enter a file path as parametter"
         assert os.path.isfile(argv[1]), "Please enter a file as parametter"
         print(os.path.dirname(argv[1]))
-        create_dir_if_needed(os.path.dirname(argv[1]))
         augment_images(argv[1], True)
     except Exception as err:
         print("Error: ", err)

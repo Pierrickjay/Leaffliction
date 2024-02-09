@@ -14,33 +14,26 @@ def retrieve_file_subdir(dir):
                 for filename in filenames:
                     file_names.append(foldername + "/" + subdirectory + "/" + filename)
         else :
-            print("fukc")
-            print(foldername)
             for filename in filenames:
                     file_names.append(foldername + "/" + filename)
         data[base_foldername] = pd.Series(file_names)
-        print("base = ", base_foldername)
     df = pd.concat(data, axis=1)  # To deal with dict
     df.dropna(axis=1, how="all", inplace=True)
-    print(df)
     return df
 
 
 def plot_value(df):
-    print(df)
     file_count = df.count()  # en trouve 1 de moins
-    print(file_count)
-    # Plot histograms
     plt.figure(figsize=(12, 6))
 
     # Plot bar chart
-    plt.subplot(2, 2, 1)
+    plt.subplot(1, 2, 1)
     plt.bar(df.columns, file_count, color='lightcoral')
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=90)
     plt.title('File Count per Directory (Bar Chart)')
 
     # Plot pie chart
-    plt.subplot(2, 2, 2)
+    plt.subplot(1, 2, 2)
     plt.pie(file_count, labels=df.columns, autopct='%1.1f%%', startangle=90,
             colors=['lightgreen', 'lightcoral', 'skyblue'])
     plt.title('File Count Distribution (Pie Chart)')
