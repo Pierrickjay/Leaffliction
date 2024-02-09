@@ -2,14 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 from Distribution import retrieve_file_subdir
-from Augmentation import save_in
 from Pseudo_landmark_change import x_axis_pseudolandmarks
 from plantcv import plantcv as pcv
 import cv2
-import sys
 import os
 import argparse
-import pandas as pd
 from sys import argv
 
 
@@ -60,6 +57,8 @@ def plot_hist(histo, output_path=None, to_save=False):
         plt.savefig(output_path)  # Save the plot as an image file
         plt.close()  # Close the plot to free up memory
     else:
+        manager = plt.get_current_fig_manager()
+        manager.set_window_title("Colors Histograms")
         plt.show()
 
 
@@ -90,6 +89,16 @@ def pseudo_landmarks(img, thresh, plot=True):
     top, bottom, center_v, img2 = x_axis_pseudolandmarks(img=img, mask=thresh)
     return img2
 
+def pcv_to_plt(img):
+    dimensions = np.shape(img)
+    if isinstance(img, np.ndarray):
+        plt.rcParams['figure.dpi'] = pcv.params.dpi
+        # If the image is color then OpenCV stores it as BGR, we plot it as RGB
+        if len(dimensions) == 3:
+            plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        else :
+            plt.imshow(img, cmap="gray")
+
 def analyze_object(img, thresh):
     a_fill_image = pcv.fill(bin_img=thresh, size=3)
     roi = pcv.roi.rectangle(img=img, x=0, y=0, h=256, w=256)
@@ -98,34 +107,58 @@ def analyze_object(img, thresh):
     return shape_img
 
 def plot_img(imgs):
+    desc = ["Original", "Gaussian blur", "Mask", "Roi object", "Analyze object", "Pseudolandmarks"]
+    plt.figure(figsize=(2 * 5, 3 * 5))
+    i = 0
     for img in imgs:
-        pcv.plot_image(img)
+        plt.subplot(3, 2, i + 1)
+        plt.title(desc[i])
+        pcv_to_plt(img)
+        i += 1
+
+    plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95,wspace=0.4, hspace=0.2)
+    manager = plt.get_current_fig_manager()
+    manager.set_window_title("Transformation images")
+    plt.show()
+
+def apply_functs(img, dest, path):
+    gray_img = pcv.rgb2gray_cmyk(rgb_img=img, channel='y')
+    thresh = pcv.threshold.binary(gray_img=gray_img, threshold=115, object_type="light")
+    # need to apply a filter to tresh to harmonize the pixel
+    mask = mask_img(img, thresh)
+    roi = roi_img(img, thresh)
+    analy = analyze_object(img, thresh)
+    pseud = pseudo_landmarks(img, thresh, False)
+    histo = histogram_with_colors(img, color_spaces=["blue", "blue-yellow", "green", "green-magenta", "hue", "lightness", "red", "saturation", "value"], to_save=True)
+    os.makedirs(dest + "/" + os.path.dirname(path), exist_ok=True)
+    plot_hist(histo, dest + "/" + path + "_histo.png", to_save=True)
+    cv2.imwrite(dest + "/" + path + "_tresh.png" , thresh)
+    cv2.imwrite(dest + "/" + path + "_mask.png" , mask)
+    cv2.imwrite(dest + "/" + path + "_analyze.png", analy)
+    cv2.imwrite(dest + "/" + path + "_roi.png", roi)
+    cv2.imwrite(dest + "/" + path + "_pseu.png", pseud)
+    cv2.imwrite(dest + "/" + path + "_tresh.png" ,thresh)
 
 def transfo_all(src, dest):
-    df = retrieve_file_subdir(src)
-    print(df)
-    print(df.index)
-    for column in df.columns:
-        if not os.path.isdir(dest + "/" + os.path.dirname(df.loc[0, column])):
-            os.makedirs(dest + "/" + os.path.dirname(df.loc[0, column]))
-        for value in df[column]:
-            # print(value)
-            img = np.array(Image.open(value))
-            gray_img = pcv.rgb2gray_cmyk(rgb_img=img, channel='y')
-            thresh = pcv.threshold.binary(gray_img=gray_img, threshold=115, object_type="light")
-            # need to apply a filter to tresh to harmonize the pixel
-            mask = mask_img(img, thresh)
-            roi = roi_img(img, thresh)
-            analy = analyze_object(img, thresh)
-            pseud = pseudo_landmarks(img, thresh, False)
-            histo = histogram_with_colors(img, color_spaces=["blue", "blue-yellow", "green", "green-magenta", "hue", "lightness", "red", "saturation", "value"], to_save=True)
-            plot_hist(histo, dest + "/" + value + "_histo.png", to_save=True)
-            cv2.imwrite(dest + "/" + value + "_tresh.png" , thresh)
-            cv2.imwrite(dest + "/" + value + "_mask.png" , mask)
-            cv2.imwrite(dest + "/" + value + "_analyze.png", analy)
-            cv2.imwrite(dest + "/" + value + "_roi.png", roi)
-            cv2.imwrite(dest + "/" + value + "_pseu.png", pseud)
-            cv2.imwrite(dest + "/" + value + "_tresh.png" ,thresh)
+    img_path_list = [
+         [[foldername, fn, '/'.join(
+              [e for e in foldername.split("/") if e not in ["..", "."]])]
+          for fn in filenames]
+         for foldername, subdirectory, filenames in os.walk(src)
+         if len(filenames)]
+    img_path_list = np.array([element for sous_liste in
+                              img_path_list for element in sous_liste])
+    list_path_long = list(set([img[2] for img in img_path_list]))
+    img_path_list = [[img[0], img[1], img[2].replace(
+        os.path.commonpath(list_path_long) + '/', '')]
+         for img in img_path_list]
+    img_array = np.array(
+         [np.array(Image.open(str(img_path[0] + "/" + img_path[1]), "r"))
+          for img_path in img_path_list])
+    [apply_functs(img, dest, os.path.join(path[2], path[1].split(".")[0]))
+     for path, img in zip(img_path_list, img_array)]
+
+
 
 
 def transfo_img(path=None, src=None, dest=None):
@@ -156,10 +189,10 @@ def main(file=None, src=None, dst=None):
                 if dst:
                     print("Destination Directory:", dst)
                 else:
-                    print("Precise a src with -dst ")
+                    print("Precise a directory with -dst ")
                     exit(0)
             else:
-                print("Precise a src with -src ")
+                print("Enter a source directory that exist")
                 exit(0)
         else:
             raise FileNotFoundError("Invalid source path:", src)

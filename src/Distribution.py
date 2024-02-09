@@ -23,20 +23,17 @@ def retrieve_file_subdir(dir):
 
 
 def plot_value(df):
-    print(df)
     file_count = df.count()  # en trouve 1 de moins
-    print(file_count)
-    # Plot histograms
     plt.figure(figsize=(12, 6))
 
     # Plot bar chart
-    plt.subplot(2, 2, 1)
+    plt.subplot(1, 2, 1)
     plt.bar(df.columns, file_count, color='lightcoral')
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=90)
     plt.title('File Count per Directory (Bar Chart)')
 
     # Plot pie chart
-    plt.subplot(2, 2, 2)
+    plt.subplot(1, 2, 2)
     plt.pie(file_count, labels=df.columns, autopct='%1.1f%%', startangle=90,
             colors=['lightgreen', 'lightcoral', 'skyblue'])
     plt.title('File Count Distribution (Pie Chart)')

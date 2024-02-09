@@ -26,9 +26,7 @@ def inc_to_numb(to_add, img):
 
 def inc(max, nameDir, actualsize):
     to_add = 0
-    print("max to reach = ",max)
     fn = os.listdir(nameDir)
-    print("nb of image now = ", actualsize)
     a = 0
     create_dir_if_needed(nameDir)
     while actualsize + to_add <= max and a < len(fn):
