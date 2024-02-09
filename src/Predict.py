@@ -90,14 +90,6 @@ def predict_dir(dir_path, class_names, model):
     print(f"\n{color}RESULT : {(nb_img - ko_cmp)}/{nb_img}\033[0m")
 
 
-# Chaîne de caractères avec des valeurs numériques
-s = "abc123def456ghi"
-
-# Suppression des valeurs numériques avec une expression régulière
-result = re.sub(r'\d+', '', s)
-print(result)  # Affiche : abcdefghi
-
-
 def main(**kwargs):
     try:
         print("\n")
