@@ -1,7 +1,7 @@
 import os
 from sys import argv
 from PIL import Image
-from Augmentation import create_dir_if_needed, augment_images
+from Augmentation import augment_images
 from Augmentation import rotating_img, fliping_img, bluring_img
 from Augmentation import illuminating_img, scaling_img, increase_contrast
 from Distribution import retrieve_file_subdir
@@ -27,7 +27,6 @@ def inc(max, nameDir, actualsize):
     to_add = 0
     fn = os.listdir(nameDir)
     a = 0
-    create_dir_if_needed(nameDir)
     while actualsize + to_add <= max and a < len(fn):
         img = f"{nameDir}/{fn[a]}"
         if actualsize + to_add + 6 <= max:
@@ -62,7 +61,6 @@ def main():
         if not os.path.isdir(argv[1]):
             print("Please enter a directory as a parametter")
             return 1
-        print(argv[1])
         balance(argv[1])
 
     except Exception as err:

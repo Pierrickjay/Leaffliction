@@ -6,6 +6,7 @@ from plantcv import plantcv as pcv
 import cv2
 import os
 import argparse
+from tqdm import tqdm
 
 
 def histogram_with_colors(img, color_spaces, to_save=False):
@@ -58,6 +59,7 @@ def plot_hist(histo, output_path=None, to_save=False):
         manager = plt.get_current_fig_manager()
         manager.set_window_title("Colors Histograms")
         plt.show()
+    plt.close()
 
 
 def gaussian_blur(gray_img):
@@ -130,28 +132,6 @@ def plot_img(imgs):
     plt.show()
 
 
-def apply_functs(img, dest, path):
-    gray_img = pcv.rgb2gray_cmyk(rgb_img=img, channel='y')
-    thresh = pcv.threshold.binary(gray_img=gray_img, threshold=115,
-                                  object_type="light")
-    mask = mask_img(img, thresh)
-    roi = roi_img(img, thresh)
-    analy = analyze_object(img, thresh)
-    pseud = pseudo_landmarks(img, thresh, False)
-    histo = histogram_with_colors(
-        img, color_spaces=["blue", "blue-yellow", "green", "green-magenta",
-                           "hue", "lightness", "red", "saturation", "value"],
-        to_save=True)
-    os.makedirs(dest + "/" + os.path.dirname(path), exist_ok=True)
-    plot_hist(histo, dest + "/" + path + "_histo.png", to_save=True)
-    cv2.imwrite(dest + "/" + path + "_tresh.png", thresh)
-    cv2.imwrite(dest + "/" + path + "_mask.png", mask)
-    cv2.imwrite(dest + "/" + path + "_analyze.png", analy)
-    cv2.imwrite(dest + "/" + path + "_roi.png", roi)
-    cv2.imwrite(dest + "/" + path + "_pseu.png", pseud)
-    cv2.imwrite(dest + "/" + path + "_tresh.png", thresh)
-
-
 def transfo_all(src, dest):
     img_path_list = [
          [[foldername, fn, '/'.join(
@@ -165,11 +145,35 @@ def transfo_all(src, dest):
     img_path_list = [[img[0], img[1], img[2].replace(
         os.path.commonpath(list_path_long) + '/', '')]
          for img in img_path_list]
-    img_array = np.array(
-         [np.array(Image.open(str(img_path[0] + "/" + img_path[1]), "r"))
-          for img_path in img_path_list])
-    [apply_functs(img, dest, os.path.join(path[2], path[1].split(".")[0]))
-     for path, img in zip(img_path_list, img_array)]
+    [os.makedirs(dest + "/" + path, exist_ok=True)
+     for path in list(set([img[2] for img in img_path_list]))]
+    for img_path in tqdm(img_path_list):
+        value = os.path.join(img_path[2], img_path[1].split(".")[0])
+        if os.path.isfile(dest + "/" + value + "_tresh.png"):
+            continue
+        img_img = Image.open(str(img_path[0] + "/" + img_path[1]))
+        img = np.array(img_img)
+        gray_img = pcv.rgb2gray_cmyk(rgb_img=img, channel='y')
+        thresh = pcv.threshold.binary(gray_img=gray_img, threshold=115,
+                                      object_type="light")
+        # need to apply a filter to tresh to harmonize the pixel
+        mask = mask_img(img, thresh)
+        roi = roi_img(img, thresh)
+        analy = analyze_object(img, thresh)
+        pseud = pseudo_landmarks(img, thresh, False)
+        histo = histogram_with_colors(
+            img,
+            color_spaces=["blue", "blue-yellow", "green", "green-magenta",
+                          "hue", "lightness", "red", "saturation", "value"],
+            to_save=True)
+        plot_hist(histo, dest + "/" + value + "_histo.png", to_save=True)
+        cv2.imwrite(dest + "/" + value + "_tresh.png", thresh)
+        cv2.imwrite(dest + "/" + value + "_mask.png", mask)
+        cv2.imwrite(dest + "/" + value + "_analyze.png", analy)
+        cv2.imwrite(dest + "/" + value + "_roi.png", roi)
+        cv2.imwrite(dest + "/" + value + "_pseu.png", pseud)
+        cv2.imwrite(dest + "/" + value + "_tresh.png", thresh)
+        img_img.close()
 
 
 def transfo_img(path=None, src=None, dest=None):

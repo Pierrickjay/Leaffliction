@@ -114,16 +114,6 @@ def augment_images(filename, show):
     close_all(img, rot_img, flip_img, blur_img, illum_img, contr_img, scal_img)
 
 
-def create_dir_if_needed(subDir):
-    if not os.path.isdir("augmented_directory"):
-        os.mkdir(os.path.join("augmented_directory"))
-        print("Creating augmented directory")
-    print(os.path.isdir("augmented_directory/" + subDir))
-    if not os.path.isdir("augmented_directory/" + subDir):
-        os.makedirs(os.path.join("augmented_directory/" + subDir))
-        print("Created sub-dir of the img inside the augmented directory")
-
-
 def main():
     try:
         assert len(argv) == 2, "Please enter a file path as parametter"
