@@ -3,14 +3,24 @@ from PIL import Image, ImageEnhance
 from plantcv import plantcv as pcv
 import cv2
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Flatten
+from tensorflow.keras.callbacks import Callback
 from Balance import balance
 import os
 import argparse
 import zipfile
 import shutil
 import random
+
+
+class SaveModelCallback(Callback):
+    def __init__(self, filepath):
+        super(SaveModelCallback, self).__init__()
+        self.filepath = filepath
+
+    def on_epoch_end(self, epoch, logs=None):
+        self.model.save(self.filepath.format(epoch=epoch))
 
 
 def loadDataset(path, img_size, batch):
@@ -105,12 +115,12 @@ def getDsPartitionTf(ds, train_size, val_size):
 def createFinalZip(zipFileName):
     learningFilePath = "model_param.keras"
     classNamesCsv = "class_names.csv"
-    imgDir = "increased"
+    # imgDir = "increased"
     with zipfile.ZipFile(zipFileName, 'w') as zipf:
-        for rootDir, subDir, files in os.walk(imgDir):
-            for file in files:
-                fullPath = os.path.join(rootDir, file)
-                zipf.write(fullPath, os.path.relpath(fullPath, imgDir))
+        # for rootDir, subDir, files in os.walk(imgDir):
+        #     for file in files:
+        #         fullPath = os.path.join(rootDir, file)
+        #         zipf.write(fullPath, os.path.relpath(fullPath, imgDir))
         zipf.write(learningFilePath)
         zipf.write(classNamesCsv)
 
@@ -185,14 +195,15 @@ def main(**kwargs):
 
         # Modify the dataset before the learning
         print("\nRemoving img background (this can take some time)...")
-        processImgDataSet(path)
+        # processImgDataSet(path)
         print("......................................................done !\n")
 
         # Datasets
         print("Loading dataset.......................................")
-        ds = loadDataset("increased", imgSize, batch)
+        ds = loadDataset(path, imgSize, batch)
         train_ds, validation_ds = getDsPartitionTf(ds, train_size, val_size)
         class_names = ds.class_names
+        np.savetxt("class_names.csv", class_names, delimiter=',', fmt='%s')
         print("......................................................done !\n")
 
         # CNN Model definition
@@ -207,28 +218,30 @@ def main(**kwargs):
             Dense(len(class_names), activation='softmax')
         ])
         print("......................................................done !\n")
-
         # CNN Learning
         print("Learning phase........................................")
+        save_callback = SaveModelCallback(filepath='model_param.keras')
         model.build(input_shape=input_shape)
         model.compile(
             loss=tf.keras.losses.SparseCategoricalCrossentropy(
                 from_logits=False),
             optimizer='adam',
             metrics=['accuracy'])
+        if os.path.isfile("model_param.keras"):
+            model = load_model('model_param.keras')
         model.fit(
             train_ds,
             epochs=epochs,
             batch_size=batch,
             verbose=1,
-            validation_data=validation_ds
+            validation_data=validation_ds,
+            callbacks=[save_callback]
         )
         print("......................................................done !\n")
 
         # Saving the model
         print("Saving the model......................................")
         model.save('model_param.keras')
-        np.savetxt("class_names.csv", class_names, delimiter=',', fmt='%s')
         print("......................................................done !\n")
 
         # Besoin de creer le zip avec les learning et les images
@@ -238,7 +251,7 @@ def main(**kwargs):
 
         # Besoin de creer le zip avec les learning et les images
         print("Removing tmp files....................................")
-        shutil.rmtree("increased")
+        # shutil.rmtree("increased")
         if os.path.isdir("train_tmp"):
             shutil.rmtree("train_tmp")
         os.remove('model_param.keras')

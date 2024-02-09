@@ -2,9 +2,9 @@ leaves
 augmented_directory
 src/__pycache__
 goinfre/increased
-*.JPG
 *.png
 *.zip
 increased
 test
 transformed_img
+*.keras
