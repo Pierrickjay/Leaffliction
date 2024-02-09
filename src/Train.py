@@ -9,7 +9,8 @@ from Balance import balance
 import os
 import argparse
 import zipfile
-# import shutil
+import shutil
+import random
 
 
 def loadDataset(path, img_size, batch):
@@ -104,12 +105,12 @@ def getDsPartitionTf(ds, train_size, val_size):
 def createFinalZip(zipFileName):
     learningFilePath = "model_param.keras"
     classNamesCsv = "class_names.csv"
-    # imgDir = "increased"
+    imgDir = "increased"
     with zipfile.ZipFile(zipFileName, 'w') as zipf:
-        # for rootDir, subDir, files in os.walk(imgDir):
-        #     for file in files:
-        #         fullPath = os.path.join(rootDir, file)
-        #         zipf.write(fullPath, os.path.relpath(fullPath, imgDir))
+        for rootDir, subDir, files in os.walk(imgDir):
+            for file in files:
+                fullPath = os.path.join(rootDir, file)
+                zipf.write(fullPath, os.path.relpath(fullPath, imgDir))
         zipf.write(learningFilePath)
         zipf.write(classNamesCsv)
 
@@ -136,30 +137,60 @@ def processArgs(**kwargs):
     return epochs, path, save_name, train_size, val_size
 
 
+def get_reduced_files(path, train_size, val_size):
+    img_path_list = [
+         [[foldername, fn, '/'.join(
+              [e for e in foldername.split("/") if e not in ["..", "."]])]
+          for fn in filenames]
+         for foldername, subdirectory, filenames in os.walk(path)
+         if len(filenames)]
+    img_path_list = np.array([element for sous_liste in
+                              img_path_list for element in sous_liste])
+    list_path_long = list(set([img[2] for img in img_path_list]))
+    img_path_list = [[img[0], img[1], img[2].replace(
+        os.path.commonpath(list_path_long) + '/', '')]
+            for img in img_path_list]
+    # On shuffle les fichiers
+    random.shuffle(img_path_list)
+    # On ne selectionne que le nombre necessaire
+    selected_img = img_path_list[:(train_size + val_size)]
+    # Creation des dossiers
+    [os.makedirs("train_tmp/" + path, exist_ok=True)
+     for path in list(set([img[2] for img in img_path_list]))]
+    # Copie des images
+    for img in selected_img:
+        shutil.copy2(img[0] + "/" + img[1], "train_tmp/" +
+                     img[2] + "/" + img[1])
+
+
 def main(**kwargs):
     try:
         print("\n")
         epochs, path, saveN, train_size, val_size = processArgs(**kwargs)
         assert path is not None, "Please enter a directory path as parametter"
         assert os.path.isdir(path), "Please enter a directory as a parametter"
+        if (train_size is not None and val_size is None):
+            raise AssertionError("You need to define both train and val size")
+        if (train_size is None and val_size is not None):
+            raise AssertionError("You need to define both train and val size")
         imgSize = 256
         input_shape = (imgSize, imgSize, 3)
         batch = 32
-
-        # Balance the dataset
+        if train_size is not None:
+            get_reduced_files(path, train_size, val_size)
+            path = "train_tmp"
         print("Balancing the dataset.................................")
         balance(path)
         print("......................................................done !\n")
 
         # Modify the dataset before the learning
         print("\nRemoving img background (this can take some time)...")
-        # processImgDataSet(path)
+        processImgDataSet(path)
         print("......................................................done !\n")
 
         # Datasets
         print("Loading dataset.......................................")
-        # ds = loadDataset("increased", imgSize, batch)
-        ds = loadDataset(path, imgSize, batch)
+        ds = loadDataset("increased", imgSize, batch)
         train_ds, validation_ds = getDsPartitionTf(ds, train_size, val_size)
         class_names = ds.class_names
         print("......................................................done !\n")
@@ -207,7 +238,9 @@ def main(**kwargs):
 
         # Besoin de creer le zip avec les learning et les images
         print("Removing tmp files....................................")
-        # shutil.rmtree("increased")
+        shutil.rmtree("increased")
+        if os.path.isdir("train_tmp"):
+            shutil.rmtree("train_tmp")
         os.remove('model_param.keras')
         os.remove('class_names.csv')
         print("......................................................done !\n")
