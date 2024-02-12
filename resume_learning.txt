@@ -1,0 +1,60 @@
+python src/Train.py -p leaves/images -e 20
+
+
+Balancing the dataset.................................
+......................................................done !
+
+
+Removing img background (this can take some time)...
+......................................................done !
+
+Loading dataset.......................................
+Found 13133 files belonging to 8 classes.
+-----Train dataset created with 11168 images
+-----Validation dataset created with 1952 images
+......................................................done !
+
+Defining CNN model....................................
+......................................................done !
+
+Learning phase........................................
+Epoch 1/20
+349/349 [==============================] - 146s 414ms/step - loss: 1.4984 - accuracy: 0.6652 - val_loss: 0.5188 - val_accuracy: 0.8184
+Epoch 2/20
+349/349 [==============================] - 145s 413ms/step - loss: 0.4266 - accuracy: 0.8526 - val_loss: 0.2496 - val_accuracy: 0.9177
+Epoch 3/20
+349/349 [==============================] - 147s 418ms/step - loss: 0.2727 - accuracy: 0.9056 - val_loss: 0.3056 - val_accuracy: 0.9105
+Epoch 4/20
+349/349 [==============================] - 148s 422ms/step - loss: 0.2280 - accuracy: 0.9256 - val_loss: 0.1620 - val_accuracy: 0.9493
+Epoch 5/20
+349/349 [==============================] - 146s 415ms/step - loss: 0.1592 - accuracy: 0.9444 - val_loss: 0.2424 - val_accuracy: 0.9152
+Epoch 6/20
+349/349 [==============================] - 2906s 8s/step - loss: 0.1494 - accuracy: 0.9492 - val_loss: 0.0853 - val_accuracy: 0.9718
+Epoch 7/20
+349/349 [==============================] - 309s 885ms/step - loss: 0.1357 - accuracy: 0.9561 - val_loss: 0.1035 - val_accuracy: 0.9626
+Epoch 8/20
+349/349 [==============================] - 145s 413ms/step - loss: 0.0801 - accuracy: 0.9742 - val_loss: 0.1249 - val_accuracy: 0.9628
+Epoch 9/20
+349/349 [==============================] - 146s 416ms/step - loss: 0.1182 - accuracy: 0.9626 - val_loss: 0.0919 - val_accuracy: 0.9679
+Epoch 10/20
+349/349 [==============================] - 150s 427ms/step - loss: 0.0978 - accuracy: 0.9696 - val_loss: 0.1535 - val_accuracy: 0.9565
+Epoch 11/20
+349/349 [==============================] - 148s 421ms/step - loss: 0.0878 - accuracy: 0.9728 - val_loss: 0.0449 - val_accuracy: 0.9860
+Epoch 12/20
+349/349 [==============================] - 144s 411ms/step - loss: 0.0734 - accuracy: 0.9772 - val_loss: 0.0655 - val_accuracy: 0.9762
+Epoch 13/20
+349/349 [==============================] - 147s 418ms/step - loss: 0.0763 - accuracy: 0.9761 - val_loss: 0.1215 - val_accuracy: 0.9616
+Epoch 14/20
+349/349 [==============================] - 147s 420ms/step - loss: 0.1193 - accuracy: 0.9649 - val_loss: 0.0558 - val_accuracy: 0.9857
+Epoch 15/20
+349/349 [==============================] - 144s 410ms/step - loss: 0.0533 - accuracy: 0.9839 - val_loss: 0.1090 - val_accuracy: 0.9653
+Epoch 16/20
+349/349 [==============================] - 147s 419ms/step - loss: 0.0817 - accuracy: 0.9754 - val_loss: 0.0449 - val_accuracy: 0.9829
+Epoch 17/20
+349/349 [==============================] - 155s 442ms/step - loss: 0.0429 - accuracy: 0.9871 - val_loss: 0.0921 - val_accuracy: 0.9757
+Epoch 18/20
+349/349 [==============================] - 152s 434ms/step - loss: 0.0766 - accuracy: 0.9778 - val_loss: 0.0854 - val_accuracy: 0.9700
+Epoch 19/20
+349/349 [==============================] - 146s 416ms/step - loss: 0.0587 - accuracy: 0.9833 - val_loss: 0.0476 - val_accuracy: 0.9836
+Epoch 20/20
+349/349 [==============================] - 149s 423ms/step - loss: 0.0488 - accuracy: 0.9853 - val_loss: 0.0320 - val_accuracy: 0.9887

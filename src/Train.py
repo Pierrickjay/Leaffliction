@@ -211,7 +211,11 @@ def main(**kwargs):
         model = Sequential([
             Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
             MaxPooling2D((2, 2)),
-            Conv2D(32, (3, 3), activation='relu'),
+            Conv2D(64, (3, 3), activation='relu'),
+            MaxPooling2D((2, 2)),
+            Conv2D(64, (3, 3), activation='relu'),
+            MaxPooling2D((2, 2)),
+            Conv2D(64, (3, 3), activation='relu'),
             MaxPooling2D((2, 2)),
             Flatten(),
             Dense(64, activation='relu'),
@@ -220,7 +224,7 @@ def main(**kwargs):
         print("......................................................done !\n")
         # CNN Learning
         print("Learning phase........................................")
-        save_callback = SaveModelCallback(filepath='model_param.keras')
+        save_callback = SaveModelCallback(filepath='model_param_epoch_{epoch}.keras')
         model.build(input_shape=input_shape)
         model.compile(
             loss=tf.keras.losses.SparseCategoricalCrossentropy(
@@ -254,8 +258,8 @@ def main(**kwargs):
         # shutil.rmtree("increased")
         if os.path.isdir("train_tmp"):
             shutil.rmtree("train_tmp")
-        os.remove('model_param.keras')
-        os.remove('class_names.csv')
+        # os.remove('model_param.keras')
+        # os.remove('class_names.csv')
         print("......................................................done !\n")
 
     except Exception as err:

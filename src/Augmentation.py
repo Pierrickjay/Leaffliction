@@ -6,8 +6,8 @@ from sys import argv
 
 def save_in(file_path, img, _type):
     filepath_split = os.path.splitext(file_path)
-    new_path = filepath_split[0] + _type + filepath_split[1]
-    img.save(new_path)
+    new_path = filepath_split[0] + _type + ".png"
+    img.save(new_path, format="PNG")
 
 
 def rotating_img(img, file_path):

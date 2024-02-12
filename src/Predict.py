@@ -10,10 +10,13 @@ from matplotlib.gridspec import GridSpec
 import re
 
 
+
+
 def processArgs(**kwargs):
     img_path = None
     learning_zip = None
     dir_path = None
+    model = None
     for key, value in kwargs.items():
         if value is not None:
             match key:
@@ -23,7 +26,9 @@ def processArgs(**kwargs):
                     learning_zip = value
                 case 'dir':
                     dir_path = value
-    return dir_path, img_path, learning_zip
+                case 'model':
+                    model = value
+    return dir_path, img_path, learning_zip, model
 
 
 def extract_file_from_zip(zip_file_name, internal_file_path, destDir):
@@ -93,7 +98,7 @@ def predict_dir(dir_path, class_names, model):
 def main(**kwargs):
     try:
         print("\n")
-        dir_path, img_path, learning_zip = processArgs(**kwargs)
+        dir_path, img_path, learning_zip, model_path = processArgs(**kwargs)
         if learning_zip is None:
             learning_zip = 'Learning.zip'
         if img_path is not None:
@@ -106,7 +111,10 @@ def main(**kwargs):
         # extract_file_from_zip(learning_zip, "class_names.csv", ".")
 
         # Loading the model
-        model = load_model('model_param.keras')
+        if model_path is not None:
+            model = load_model(model_path)
+        else:
+            model = load_model('model_param.keras')
         class_names = np.genfromtxt('class_names.csv',
                                     delimiter=',', dtype=str)
         # os.remove('model_param.keras')
@@ -139,6 +147,8 @@ if __name__ == "__main__":
                         help="Path to the zip file containing the learning")
     parser.add_argument("--dir", "-d", type=str,
                         help="Path to the directory predict")
+    parser.add_argument("--model", "-m", type=str,
+                        help="Path to the model")
 
     args = parser.parse_args()
     kwargs = {key: getattr(args, key) for key in vars(args)}
